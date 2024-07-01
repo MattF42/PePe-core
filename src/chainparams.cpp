@@ -382,6 +382,8 @@ class CRegTestParams : public CChainParams {
 public:
     CRegTestParams() {
         strNetworkID = "regtest";
+        consensus.nNewHashHeight = 1000;
+        consensus.nNewHashBits = 0x2000ffff;
         consensus.nSubsidyHalvingInterval = 150;
         consensus.nMasternodePaymentsStartBlock = 240;
         consensus.nMasternodePaymentsIncreaseBlock = 350;
