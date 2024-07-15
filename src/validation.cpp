@@ -3493,6 +3493,10 @@ static bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state
         if (mi == mapBlockIndex.end())
             return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
         pindexPrev = (*mi).second;
+
+         if ((pindexPrev->nHeight + 1) >= chainparams.GetConsensus().nNewHashHeight && !(block.nVersion & 0x8000)) {
+	    return error("BlockValidationResult::BLOCK_INVALID_HEADER invalid-version at height %s version %s\n", pindexPrev->nHeight, block.nVersion);
+        }
         if (pindexPrev->nStatus & BLOCK_FAILED_MASK)
             return state.DoS(100, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk");
 

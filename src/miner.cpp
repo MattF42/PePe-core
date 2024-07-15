@@ -141,6 +141,8 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
         if (chainparams.MineBlocksOnDemand())
             pblock->nVersion = GetArg("-blockversion", pblock->nVersion);
 
+        if(nHeight >= chainparams.GetConsensus().nNewHashHeight) pblock->nVersion |= 0x8000;
+
         int64_t nLockTimeCutoff = (STANDARD_LOCKTIME_VERIFY_FLAGS & LOCKTIME_MEDIAN_TIME_PAST)
                                 ? nMedianTimePast
                                 : pblock->GetBlockTime();

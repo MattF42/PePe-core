@@ -12,6 +12,9 @@
 
 uint256 CBlockHeader::GetHash() const
 {
+    if(nVersion & 0x8000) {
+	    return xelisv2_hash(BEGIN(nVersion), END(nNonce), hashPrevBlock);
+    }
     return pepe_hash(BEGIN(nVersion), END(nNonce), hashPrevBlock);
 }
 
