@@ -18,6 +18,7 @@ uint256 CBlockHeader::GetHash() const
     return pepe_hash(BEGIN(nVersion), END(nNonce), hashPrevBlock);
 }
 
+
 std::string CBlock::ToString() const
 {
     std::stringstream s;

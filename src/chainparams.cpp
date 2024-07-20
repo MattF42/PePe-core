@@ -267,7 +267,7 @@ class CTestNetParams : public CChainParams {
 public:
     CTestNetParams() {
         strNetworkID = "test";
-        consensus.nNewHashHeight = 1000;
+        consensus.nNewHashHeight = 100;
         consensus.nNewHashBits = 0x2000ffff;
         consensus.nSubsidyHalvingInterval = 210240;
         consensus.nMasternodePaymentsStartBlock = 4010; // not true, but it's ok as long as it's less then nMasternodePaymentsIncreaseBlock
@@ -386,7 +386,7 @@ class CRegTestParams : public CChainParams {
 public:
     CRegTestParams() {
         strNetworkID = "regtest";
-        consensus.nNewHashHeight = 1000;
+        consensus.nNewHashHeight = 100;
         consensus.nNewHashBits = 0x2000ffff;
         consensus.nSubsidyHalvingInterval = 150;
         consensus.nMasternodePaymentsStartBlock = 240;

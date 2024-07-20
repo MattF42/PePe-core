@@ -412,5 +412,11 @@ inline uint256 pepe_hash(const T1 pbegin, const T1 pend, const uint256 PrevBlock
     return hash[7].trim256();
 }
 
+template<typename T1>
+inline uint256 xelisv2_hash(const T1 pbegin, const T1 pend, const uint256 PrevBlockHash)
+{   
+	    uint512 hash[8];
+	        return hash[7].trim256();
+}
 
 #endif // RAVEN_HASH_H
