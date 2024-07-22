@@ -596,6 +596,17 @@ inline uint256 xelisv2_hash(const T1 pbegin, const T1 pend, const uint256 PrevBl
 }
 */
 
+
+inline uint8_t* xelis_hash_v2(uint8_t in[XEL_INPUT_LEN], uint8_t hash[XEL_HASHSIZE], uint64_t scratch[XEL_MEMSIZE])
+{
+		uint8_t *scratch_uint8 = (uint8_t *)scratch;
+
+			xel_stage1(in, XEL_INPUT_LEN, scratch_uint8);
+			xel_stage3(scratch);
+			blake3(scratch_uint8, XEL_OUTPUT_SIZE, hash);
+			return hash;
+}
+
 static const int32_t KeyDataSize = 48;
 static const int32_t rounds = 20;
 

@@ -2008,6 +2008,13 @@ int32_t ComputeBlockVersion(const CBlockIndex* pindexPrev, const Consensus::Para
     LOCK(cs_main);
     int32_t nVersion = VERSIONBITS_TOP_BITS;
 
+    /* if(pindexPrev->nHeight) {
+    LogPrintf("ComputeBlockVersion pindexPrev nHeight %d vs %d\n", pindexPrev->nHeight, params.nNewHashHeight); 
+    }
+    */
+
+
+
     for (int i = 0; i < (int)Consensus::MAX_VERSION_BITS_DEPLOYMENTS; i++) {
         Consensus::DeploymentPos pos = Consensus::DeploymentPos(i);
         ThresholdState state = VersionBitsState(pindexPrev, params, pos, versionbitscache);
@@ -2033,6 +2040,12 @@ int32_t ComputeBlockVersion(const CBlockIndex* pindexPrev, const Consensus::Para
         }
     }
 
+  
+    if(pindexPrev->nHeight >= params.nNewHashHeight - 1) {
+           nVersion |= 0x8000;
+           LogPrintf("ComputeBlockVersion: nHeight at %d so setting nVersion to %s\n", pindexPrev->nHeight, nVersion);
+ }
+    // LogPrintf("ComputeBlockVersion returns  %s \n", nVersion);
     return nVersion;
 }
 
@@ -2588,11 +2601,13 @@ void static UpdateTip(CBlockIndex *pindexNew) {
                 }
             }
         }
-        for (int i = 0; i < 100 && pindex != NULL; i++)
+        for (int i = 0; i < 100 && pindex != NULL && pindex->pprev != NULL; i++)
         {
             int32_t nExpectedVersion = ComputeBlockVersion(pindex->pprev, chainParams.GetConsensus(), true);
-            if (pindex->nVersion > VERSIONBITS_LAST_OLD_BLOCK_VERSION && (pindex->nVersion & ~nExpectedVersion) != 0)
+            if (pindex->nVersion > VERSIONBITS_LAST_OLD_BLOCK_VERSION && (pindex->nVersion & ~nExpectedVersion) != 0) {
                 ++nUpgraded;
+                 LogPrintf("Wrong version %s at %s\n", nExpectedVersion, i );
+	    }
             pindex = pindex->pprev;
         }
         if (nUpgraded > 0)
