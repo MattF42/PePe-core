@@ -206,14 +206,239 @@ static inline uint64_t udiv(uint64_t high, uint64_t low, uint64_t divisor)
 
 
 
+static inline uint64_t isqrt(uint64_t n)
+{
+	  if (n < 2)
+		    {
+			        return n;
+				  }
+
+	    uint64_t x = n;
+	      uint64_t y = (x + 1) >> 1;
+
+	        while (y < x)
+			  {
+				      x = y;
+				          y = (x + n / x) >> 1;
+					    }
+
+		  return x;
+}
 
 
-void xel_stage1(const uint8_t *input, size_t input_len, uint8_t scratch_pad[XEL_OUTPUT_SIZE])
+
+// __attribute__((noinline))
+static inline uint64_t case_0(uint64_t a, uint64_t b, uint64_t c, int r, uint64_t result, int i, int j) { 
+  return XEL_ROTL(c, i * j) ^ b; 
+}
+// __attribute__((noinline))
+static inline uint64_t case_1(uint64_t a, uint64_t b, uint64_t c, int r, uint64_t result, int i, int j) { 
+  return XEL_ROTR(c, i * j) ^ a; 
+}
+// __attribute__((noinline))
+static inline uint64_t case_2(uint64_t a, uint64_t b, uint64_t c, int r, uint64_t result, int i, int j) { 
+  return a ^ b ^ c; 
+}
+// __attribute__((noinline))
+static inline uint64_t case_3(uint64_t a, uint64_t b, uint64_t c, int r, uint64_t result, int i, int j) { 
+  return (a + b) * c; 
+}
+// __attribute__((noinline))
+static inline uint64_t case_4(uint64_t a, uint64_t b, uint64_t c, int r, uint64_t result, int i, int j) { 
+  return (b - c) * a; 
+}
+// __attribute__((noinline))
+static inline uint64_t case_5(uint64_t a, uint64_t b, uint64_t c, int r, uint64_t result, int i, int j) { 
+  return c - a + b; 
+}
+// __attribute__((noinline))
+static inline uint64_t case_6(uint64_t a, uint64_t b, uint64_t c, int r, uint64_t result, int i, int j) { 
+  return a - b + c; 
+}
+// __attribute__((noinline))
+static inline uint64_t case_7(uint64_t a, uint64_t b, uint64_t c, int r, uint64_t result, int i, int j) { 
+  return b * c + a; 
+}
+// __attribute__((noinline))
+static inline uint64_t case_8(uint64_t a, uint64_t b, uint64_t c, int r, uint64_t result, int i, int j) { 
+  return c * a + b; 
+}
+// __attribute__((noinline))
+static inline uint64_t case_9(uint64_t a, uint64_t b, uint64_t c, int r, uint64_t result, int i, int j) { 
+  return a * b * c; 
+}
+// __attribute__((noinline))
+static inline uint64_t case_10(uint64_t a, uint64_t b, uint64_t c, int r, uint64_t result, int i, int j) { 
+  return COMBINE_UINT64(a,b) % (c | 1); 
+}
+// __attribute__((noinline))
+static inline uint64_t case_11(uint64_t a, uint64_t b, uint64_t c, int r, uint64_t result, int i, int j) { 
+  __uint128_t t2 = COMBINE_UINT64(XEL_ROTL(result, r), a | 2);
+  return (t2 > COMBINE_UINT64(b,c)) ? c : COMBINE_UINT64(b,c) % t2;
+}
+// __attribute__((noinline))
+static inline uint64_t case_12(uint64_t a, uint64_t b, uint64_t c, int r, uint64_t result, int i, int j) { 
+  return udiv(c, a, b | 4); 
+}
+// __attribute__((noinline))
+static inline uint64_t case_13(uint64_t a, uint64_t b, uint64_t c, int r, uint64_t result, int i, int j) { 
+  __uint128_t t1 = COMBINE_UINT64(XEL_ROTL(result, r), b);
+  __uint128_t t2 = COMBINE_UINT64(a, c | 8);
+  return (t1 > t2) ? t1 / t2 : a ^ b;
+}
+// __attribute__((noinline))
+static inline uint64_t case_14(uint64_t a, uint64_t b, uint64_t c, int r, uint64_t result, int i, int j) { 
+  return (COMBINE_UINT64(b,a) * c) >> 64; 
+}
+// __attribute__((noinline))
+static inline uint64_t case_15(uint64_t a, uint64_t b, uint64_t c, int r, uint64_t result, int i, int j) { 
+  return (COMBINE_UINT64(a,c) * COMBINE_UINT64(XEL_ROTR(result, r), b)) >> 64; 
+}
+
+
+
+typedef uint64_t (*operation_func)(uint64_t, uint64_t, uint64_t, int, uint64_t, int, int);
+operation_func operations[] = {
+	    case_0, case_1, case_2, case_3, case_4, case_5, case_6, case_7,
+	        case_8, case_9, case_10, case_11, case_12, case_13, case_14, case_15,
+		    // Add other functions for cases 10-15
+		    };
+		    //
+
+//
+// void xel_stage_3(uint64_t *scratch_pad, workerData_xelis_v2 &worker)
+void xel_stage_3(uint64_t *scratch_pad)
+{
+    const uint8_t key[17] = "xelishash-pow-v2";
+    uint8_t block[16] = {0};
+
+    uint64_t *mem_buffer_a = scratch_pad;
+    uint64_t *mem_buffer_b = scratch_pad + XELIS_BUFFER_SIZE_V2;
+
+    uint64_t addr_a = mem_buffer_b[XELIS_BUFFER_SIZE_V2 - 1];
+    uint64_t addr_b = mem_buffer_a[XELIS_BUFFER_SIZE_V2 - 1] >> 32;
+    size_t r = 0;
+
+
+    #pragma unroll 3
+    for (size_t i = 0; i < XELIS_SCRATCHPAD_ITERS_V2; ++i) {
+        uint64_t mem_a = mem_buffer_a[addr_a % XELIS_BUFFER_SIZE_V2];
+        uint64_t mem_b = mem_buffer_b[addr_b % XELIS_BUFFER_SIZE_V2];
+
+        // std::copy(&mem_b, &mem_b + 8, block);
+        // std::copy(&mem_a, &mem_a + 8, block + 8);
+
+        uint64_to_le_bytes(mem_b, block);
+		    uint64_to_le_bytes(mem_a, block + 8);
+
+        aes_single_round(block, key);
+
+        uint64_t hash1 = 0, hash2 = 0;
+        // hash1 = ((uint64_t*)block)[0]; // simple assignment, slower than SIMD on my CPU
+        hash1 = le_bytes_to_uint64(block);
+        // std::copy(block, block + 8, &hash1);
+        // hash1 = _byteswap_uint64(hash1);
+        hash2 = mem_a ^ mem_b;
+
+        addr_a = ~(hash1 ^ hash2);
+
+        // printf("pre result: %llu\n", result);
+
+        for (size_t j = 0; j < XELIS_BUFFER_SIZE_V2; ++j) {
+            uint64_t a = mem_buffer_a[(addr_a % XELIS_BUFFER_SIZE_V2)];
+            uint64_t b = mem_buffer_b[~XEL_ROTR(addr_a, r) % XELIS_BUFFER_SIZE_V2];
+            uint64_t c = (r < XELIS_BUFFER_SIZE_V2) ? mem_buffer_a[r] : mem_buffer_b[r - XELIS_BUFFER_SIZE_V2];
+            r = (r+1) % XELIS_MEMORY_SIZE_V2;
+
+            // printf("a %llu, b %llu, c %llu, ", a, b, c);
+            uint64_t v;
+            uint32_t idx = XEL_ROTL(addr_a, (uint32_t)c) & 0xF;
+            v = operations[idx](a,b,c,r,addr_a,i,j);
+
+            addr_a = XEL_ROTL(addr_a ^ v, 1);
+
+            uint64_t t = mem_buffer_a[XELIS_BUFFER_SIZE_V2 - j - 1] ^ addr_a;
+            mem_buffer_a[XELIS_BUFFER_SIZE_V2 - j - 1] = t;
+            mem_buffer_b[j] ^= XEL_ROTR(t, (uint32_t)addr_a);
+        }
+        // printf("post result: %llu\n", result);
+        addr_b = isqrt(addr_a);
+    }
+
+  // Crc32 crc32;
+  // crc32.input((uint8_t *)scratch_pad, XELIS_MEMORY_SIZE_V2 * 8);
+  // printf("%llu\n", crc32.result());
+}
+
+
+
+void xel_stage_1(const uint8_t *input, uint64_t *sp, size_t input_len)
+{
+	  const size_t chunk_size = 32;
+	    const size_t nonce_size = 12;
+	      const size_t output_size = XELIS_MEMORY_SIZE_V2 * 8;
+	        const size_t chunks = 4;
+
+		  uint8_t *t = reinterpret_cast<uint8_t *>(sp);
+		    uint8_t key[chunk_size * chunks] = {0};
+		      uint8_t K2[32] = {0};
+		        uint8_t buffer[chunk_size*2] = {0};
+
+			  memcpy(key, input, input_len);
+			    blake3(input, input_len, buffer);
+
+			      memcpy(buffer + chunk_size, key, chunk_size);
+			        blake3(buffer, chunk_size*2, K2);
+				  chacha_encrypt(K2, buffer, NULL, t, output_size / chunks, 8);
+
+				    t += output_size / chunks;
+
+				      memcpy(buffer, K2, chunk_size);
+				        memcpy(buffer + chunk_size, key + chunk_size, chunk_size);
+					  blake3(buffer, chunk_size*2, K2);
+					    chacha_encrypt(K2, t - nonce_size, NULL, t, output_size / chunks, 8);
+
+					      t += output_size / chunks;
+
+					        memcpy(buffer, K2, chunk_size);
+						  memcpy(buffer + chunk_size, key + 2*chunk_size, chunk_size);
+						    blake3(buffer, chunk_size*2, K2);
+						      chacha_encrypt(K2, t - nonce_size, NULL, t, output_size / chunks, 8);
+
+						        t += output_size / chunks;
+
+							  memcpy(buffer, K2, chunk_size);
+							    memcpy(buffer + chunk_size, key + 3*chunk_size, chunk_size);
+							      blake3(buffer, chunk_size*2, K2);
+							        chacha_encrypt(K2, t - nonce_size, NULL, t, output_size / chunks, 8);
+
+								  // Crc32 crc32;
+								  //   // crc32.input((uint8_t *)sp, XELIS_MEMORY_SIZE_V2 * 8);
+								  //     // printf("%lu\n", crc32.result());
+								  //       // Crc32 crc32;
+								  //         // crc32.input(scratch_pad, 10);
+								  //           // std::cout << "Stage 1 scratch pad CRC32: 0x" << std::hex << std::setw(8) << std::setfill('0') << crc32.result() << std::endl;
+								  //           }
+								  //
+								  //
+								  //
+
+								}
+
+void xel_xel_stage1(const uint8_t *input, size_t input_len, uint8_t scratch_pad[XEL_OUTPUT_SIZE])
 {
 	uint8_t key[XEL_CHUNK_SIZE * XEL_CHUNKS] = {0};
 	uint8_t input_hash[XEL_HASH_SIZE];
 	uint8_t buffer[XEL_CHUNK_SIZE * 2];
 	memcpy(key, input, XEL_INPUT_LEN);
+
+	int j;
+	LogPrintf("Key : ");
+	for(j = 0; j < XEL_CHUNK_SIZE * XEL_CHUNKS; ++j)
+        LogPrintf("%02x ", ((uint8_t*) key)[j]);
+	LogPrintf(": \n ");
+
+
 	blake3(input, XEL_INPUT_LEN, buffer);
 
 	uint8_t *t = scratch_pad;
@@ -561,37 +786,47 @@ void chacha_encrypt(uint8_t *key, uint8_t *nonce, uint8_t *in, uint8_t *out, siz
 // template<typename T1>
 void xelis_hash_v2(const void* data, size_t len, const uint256 PrevBlockHash, uint8_t hashResult[XEL_HASHSIZE])
 {
-	// using Hash = std::array<byte, XELIS_HASH_SIZE>;
-			// LogPrintf("XELV2: Called with  %s %s %s \n",in[XEL_INPUT_LEN], hash[XEL_HASHSIZE], scratch[XEL_MEMSIZE]);
 			static uint8_t pblank[1];
-			//  const void * in[XEL_INPUT_LEN] =  { (pbegin == pend ? pblank : static_cast<const void*>(&pbegin[0])) };
-			/*
-			if( pbegin == pend) {
-			in = { *pblank };
-			} else {
-			*/
 
-			char buf[4096];
-			LogPrintf("XELV2: Length is   %d\n",len);
+			char buf[len];
+			// char buf[8192];
+			// LogPrintf("XELV2: Length is   %d\n",len);
 			memcpy(buf, data, len);
 			buf[len] = '\0';
-			LogPrintf("XELV2: Buffer is   %s\n",buf);
+			int j;
+			/*
+			LogPrintf("For loop: ");
+			for(j = 0; j < len; ++j)
+				  LogPrintf("%02x ", ((uint8_t*) data)[j]);
+			LogPrintf(": \n ");
+			LogPrintf("J Got to %d \n ",j);
+			*/
+
+			uint8_t dest_hash[len];
+			std::memcpy(dest_hash, &buf, len);
 
 			uint64_t *scratch = (uint64_t *)calloc(XEL_MEMSIZE, sizeof(uint64_t));
 			uint8_t *scratch_uint8 = (uint8_t *)scratch;
 
 			uint8_t scratch_pad[XEL_OUTPUT_SIZE];
-			xel_stage1((const uint8_t*)buf, len, scratch_uint8);
-			xel_stage3(scratch);
-			blake3(scratch_uint8, XEL_OUTPUT_SIZE, hashResult);
+			xel_stage_1(dest_hash, scratch, len);
+			/*
+			LogPrintf("Stage1 : ");
+			for(j = 0; j < sizeof(scratch_uint8); ++j)
+				  LogPrintf("%02x ", ((uint8_t*) scratch_uint8)[j]);
+			LogPrintf(": \n ");
+			*/
+			xel_stage_3(scratch);
+			blake3((uint8_t*)scratch, XEL_OUTPUT_SIZE, hashResult);
 			return;
 
 }
 template<typename T1>
 void pre_xelis_hash_v2(const T1 pbegin, const T1 pend, const uint256 PrevBlockHash, uint8_t hash_result[XEL_HASHSIZE]) {
 	static unsigned char pblank[1];
-	// uint256 PrevBlockHash;
-	// byte hash_result[XELIS_HASH_SIZE] = {0};
+	if(pbegin == pend) {
+			LogPrintf("pre_xelis_hash_v2: pbegin == pend\n");
+	}
 	xelis_hash_v2((pbegin == pend ? pblank : static_cast<const void*>(&pbegin[0])), (pend - pbegin) * sizeof(pbegin[0]), PrevBlockHash, hash_result);
 	return;
 }
@@ -602,36 +837,29 @@ uint256 CBlockHeader::GetHash() const
 {
 	uint256 PePeHash;
 
-           LogPrintf("CBlockHeader::GetHash %s\n",BEGIN(nVersion));
-	   // static_cast<const void*>(&pbegin[0])), (pend - pbegin) * sizeof(pbegin[0])
-    if(nVersion & 0x8000) {
-        // return xelis_hash_v2(arg1, arg2, &hashPrevBlock);
-	   // uint256 hash_result;
+        // LogPrintf("CBlockHeader::GetHash %s\n",BEGIN(nVersion));
+        if(nVersion & 0x8000) {
 	   uint8_t hash_result[XELIS_HASH_SIZE] = {0};
 	   uint256 res;
 	   int i,j,temp;
-	   /*
-void xelis_hash_v2(const void* data, size_t len, const uint256 PrevBlockHash, byte *hashResult)
-*/
 	   pre_xelis_hash_v2(BEGIN(nVersion), END(nNonce), hashPrevBlock, hash_result);
-// void pre_xelis_hash_v2(const T1 pbegin, const T1 pend, const uint256 PrevBlockHash) {
-	   for (i = 0, j = XELIS_HASH_SIZE; i < j; i++, j--) { // loop to swap element
+	   /*
+           LogPrintf("CBlockHeader:: SWAP: ");
+	   for (i = 0, j = XELIS_HASH_SIZE - 1; i < j; i++, j--) { // loop to swap element
 		   temp = hash_result[i];
+                   LogPrintf("%02x", hash_result[i]);
 		   hash_result[i] = hash_result[j];
 		   hash_result[j] = temp;
 	   }
+           LogPrintf("\n");
+	   */
 	   std::memcpy(&res, hash_result, sizeof(hash_result));
-	   // res[0] = swap_endianness(res[0]);
-	   // res[1] = swap_endianness(res[1]);
            LogPrintf("CBlockHeader::xelis_hash %s\n",res.ToString());
 	   return res;
     }
     PePeHash = pepe_hash(BEGIN(nVersion), END(nNonce), hashPrevBlock);
-     LogPrintf("CBlockHeader::pepe_hash - %s \n",PePeHash.ToString());
+    // LogPrintf("CBlockHeader::pepe_hash - %s \n",PePeHash.ToString());
     return PePeHash;
-       
-    // }
-    // return pepe_hash(BEGIN(nVersion), END(nNonce), hashPrevBlock);
 }
 
 

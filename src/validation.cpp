@@ -1304,8 +1304,9 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex, const Consensus
     if (!ReadBlockFromDisk(block, pindex->GetBlockPos(), consensusParams))
         return false;
     if (block.GetHash() != pindex->GetBlockHash())
-        return error("ReadBlockFromDisk(CBlock&, CBlockIndex*): GetHash() doesn't match index for %s at %s",
-                pindex->ToString(), pindex->GetBlockPos().ToString());
+        return error("ReadBlockFromDisk(CBlock&, CBlockIndex*): GetHash() %s doesn't match index for %s at %s",
+                block.GetHash().ToString(), pindex->ToString(), pindex->GetBlockPos().ToString());
+    //ERROR: ReadBlockFromDisk(CBlock&, CBlockIndex*): GetHash() doesn't match index for CBlockIndex(pprev=0x7f13180035f0, nHeight=4, merkle=9e613bd206ffc5899d5daa673c5b41e95c4a6530fbbacb8e01a55921809e47a2, hashBlock=001216136a9c591d3a83313fadb56d82ce3c75a16641cfb0074b1f52cf285340) at CBlockDiskPos(nFile=0, nPos=985)
     return true;
 }
 
