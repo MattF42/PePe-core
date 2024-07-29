@@ -337,8 +337,8 @@ public:
 
         vFixedSeeds.clear();
         vSeeds.clear();
-        vSeeds.push_back(CDNSSeedData("PEPEPOWdot.io",  "testnet-seed.PEPEPOWdot.io"));
-        vSeeds.push_back(CDNSSeedData("masternode.io", "test.dnsseed.masternode.io"));
+        vSeeds.push_back(CDNSSeedData("13.51.162.190", "13.51.162.190"));
+        vSeeds.push_back(CDNSSeedData("82.163.79.208", "82.163.79.208"));
 
         // Testnet PEPEPOW addresses start with 'y'
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,140);

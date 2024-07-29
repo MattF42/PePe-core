@@ -3639,6 +3639,7 @@ static bool IsSuperMajority(int minVersion, const CBlockIndex* pstart, unsigned 
 
 bool ProcessNewBlock(const CChainParams& chainparams, const CBlock* pblock, bool fForceProcessing, const CDiskBlockPos* dbp, bool *fNewBlock)
 {
+    LogPrintf("%s : STARTS\n", __func__);
     {
         LOCK(cs_main);
 
@@ -3654,6 +3655,7 @@ bool ProcessNewBlock(const CChainParams& chainparams, const CBlock* pblock, bool
         }
     }
 
+    LogPrintf("%s : NotifyHeaderTip\n", __func__);
     NotifyHeaderTip();
 
     CValidationState state; // Only used to report errors, not invalidity - ignore it
