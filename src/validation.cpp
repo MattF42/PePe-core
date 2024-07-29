@@ -2044,7 +2044,7 @@ int32_t ComputeBlockVersion(const CBlockIndex* pindexPrev, const Consensus::Para
   
     if(pindexPrev->nHeight >= params.nNewHashHeight - 1) {
            nVersion |= 0x8000;
-           LogPrintf("ComputeBlockVersion: nHeight at %d so setting nVersion to %s\n", pindexPrev->nHeight, nVersion);
+           // LogPrintf("ComputeBlockVersion: nHeight at %d so setting nVersion to %s\n", pindexPrev->nHeight, nVersion);
  }
     // LogPrintf("ComputeBlockVersion returns  %s \n", nVersion);
     return nVersion;

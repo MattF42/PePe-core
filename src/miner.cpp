@@ -146,8 +146,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
 
         if(nHeight >= chainparams.GetConsensus().nNewHashHeight) {
 	       	pblock->nVersion |= 0x8000;
-                    LogPrintf("nHeight at %d so setting nVersion to %s\n",
-                              nHeight, pblock->nVersion);
+                    // LogPrintf("nHeight at %d so setting nVersion to %s\n", nHeight, pblock->nVersion);
 	}
 
         int64_t nLockTimeCutoff = (STANDARD_LOCKTIME_VERIFY_FLAGS & LOCKTIME_MEDIAN_TIME_PAST)
