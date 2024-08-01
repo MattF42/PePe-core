@@ -476,8 +476,8 @@ void xel_stage_1(const uint8_t *input, size_t input_len, uint8_t scratch_pad[XEL
         uint8_t key[XEL_CHUNK_SIZE * XEL_CHUNKS] = {0};
         uint8_t input_hash[XEL_HASH_SIZE];
         uint8_t buffer[XEL_CHUNK_SIZE * 2];
-        // memcpy(key, input, INPUT_LEN);
-        memcpy(key, input, sizeof(input));
+        memcpy(key, input, XEL_INPUT_LEN);
+        // memcpy(key, input, sizeof(input));
         blake3(input, input_len, buffer);
 
         uint8_t *t = scratch_pad;
@@ -713,40 +713,37 @@ void xelis_goldenhash()
 
 void xelis_hash_v2(const void* data, size_t len, uint8_t hashResult[XEL_HASHSIZE])
 {
-	                xelis_goldenhash();
+	                // xelis_goldenhash();
 			static uint8_t pblank[1];
 
-			// char buf[len]; /* This causes stack-protector issues, and an actual crash on aarch64 */
-			char buf[XEL_INPUT_LEN];
-			// LogPrintf("XELV2: Length is   %d\n",len);
-			memcpy(buf, data, len);
-			buf[len] = '\0';
-			int j;
-			LogPrintf("Hash Input as hex: ");
-			for(j = 0; j < len; ++j)
-				  LogPrintf("%02x", ((uint8_t*) data)[j]);
-			LogPrintf(": \n ");
-			// LogPrintf("J Got to %d \n ",j);
-
-			uint8_t dest_hash[XEL_INPUT_LEN];
-			std::memcpy(dest_hash, &buf, len);
+			// LogPrintf("XEL2: Len is %d\n", len);
 
 			uint64_t *scratch = (uint64_t *)calloc(XEL_MEMSIZE, sizeof(uint64_t));
 			uint8_t *scratch_uint8 = (uint8_t *)scratch;
+			uint8_t *blankinput = (uint8_t *)calloc(XEL_INPUT_LEN, sizeof(uint8_t));
+			std::memcpy(blankinput, data, len);
+			blankinput[len] = '\0';
 
 
-			uint8_t scratch_pad[XEL_OUTPUT_SIZE];
-			xel_stage_1(dest_hash, XEL_INPUT_LEN, scratch_uint8);
 			/*
-			LogPrintf("Stage1 : ");
-			for(j = 0; j < sizeof(scratch_uint8); ++j)
-				  LogPrintf("%02x ", ((uint8_t*) scratch_uint8)[j]);
-			LogPrintf(": \n ");
+			int j;
+			// LogPrintf("Hash Input as hex: ");
+			// for(j = 0; j < len; ++j)
+				  // LogPrintf("%02x", (data)[j]);
+				  // LogPrintf(": \n ");
+
+			LogPrintf("Xel Input as hex: ");
+			for(j = 0; j < len; ++j)
+				  LogPrintf("%02x", blankinput[j]);
+				  LogPrintf(": \n ");
+
+        		LogPrintf("XEL2: Input %s\n",blankinput);
 			*/
+			xel_stage_1(blankinput, XEL_INPUT_LEN, scratch_uint8);
 			xel_stage_3(scratch);
 			blake3((uint8_t*)scratch, XEL_OUTPUT_SIZE, hashResult);
 			free(scratch);
-			// free(buf);
+			free(blankinput);
 			return;
 
 }
@@ -787,11 +784,11 @@ uint256 CBlockHeader::GetHash() const
            LogPrintf("\n");
 	   */
 	   std::memcpy(&res, hash_result, sizeof(hash_result));
-           LogPrintf("CBlockHeader::xelis_hash %s\n",res.ToString());
+           // LogPrintf("CBlockHeader::xelis_hash %s\n",res.ToString());
 	   return res;
     }
     PePeHash = pepe_hash(BEGIN(nVersion), END(nNonce), hashPrevBlock);
-     LogPrintf("CBlockHeader::pepe_hash - %s \n",PePeHash.ToString());
+     // LogPrintf("CBlockHeader::pepe_hash - %s \n",PePeHash.ToString());
     return PePeHash;
 }
 
