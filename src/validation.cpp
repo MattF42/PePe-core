@@ -2045,7 +2045,7 @@ int32_t ComputeBlockVersion(const CBlockIndex* pindexPrev, const Consensus::Para
     if(pindexPrev->nHeight >= params.nNewHashHeight - 1) {
            nVersion |= 0x8000;
            // LogPrintf("ComputeBlockVersion: nHeight at %d so setting nVersion to %s\n", pindexPrev->nHeight, nVersion);
- }
+ } 
     // LogPrintf("ComputeBlockVersion returns  %s \n", nVersion);
     return nVersion;
 }
@@ -3512,7 +3512,7 @@ static bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state
 
          if ((pindexPrev->nHeight + 1) >= chainparams.GetConsensus().nNewHashHeight && !(block.nVersion & 0x8000)) {
 	    return error("BlockValidationResult::BLOCK_INVALID_HEADER invalid-version at height %s version %s\n", pindexPrev->nHeight, block.nVersion);
-        }
+        } 
         if (pindexPrev->nStatus & BLOCK_FAILED_MASK)
             return state.DoS(100, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk");
 

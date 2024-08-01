@@ -231,7 +231,7 @@ bool CheckProofOfWork(uint256 hash, unsigned int nBits, const Consensus::Params&
     bool fOverflow;
     arith_uint256 bnTarget;
 
-    // LogPrintf("CheckProofOfWork:  Hash is  %s\n",hash.ToString());
+    LogPrintf("CheckProofOfWork:  Hash is  %s\n",hash.ToString());
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
 
     // Check range
@@ -241,7 +241,7 @@ bool CheckProofOfWork(uint256 hash, unsigned int nBits, const Consensus::Params&
 
     // Check proof of work matches claimed amount
     if (UintToArith256(hash) > bnTarget)
-        return error("CheckProofOfWork(): hash doesn't match nBits");
+        return error("CheckProofOfWork(): hash doesn't match nBits with %s vs %s", UintToArith256(hash).ToString(),bnTarget.ToString());
 
     LogPrintf("CheckProofOfWork:  SUCCESS FOR HASH :   %s\n",hash.ToString());
     return true;

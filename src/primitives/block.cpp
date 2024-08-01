@@ -471,60 +471,39 @@ void xel_stage_3(uint64_t *scratch_pad)
   // printf("%llu\n", crc32.result());
 }
 
-
-
-void xel_stage_1(const uint8_t *input, uint64_t *sp, size_t input_len)
+void xel_stage_1(const uint8_t *input, size_t input_len, uint8_t scratch_pad[XEL_OUTPUT_SIZE])
 {
-	  const size_t chunk_size = 32;
-	    const size_t nonce_size = 12;
-	      const size_t output_size = XELIS_MEMORY_SIZE_V2 * 8;
-	        const size_t chunks = 4;
+        uint8_t key[XEL_CHUNK_SIZE * XEL_CHUNKS] = {0};
+        uint8_t input_hash[XEL_HASH_SIZE];
+        uint8_t buffer[XEL_CHUNK_SIZE * 2];
+        // memcpy(key, input, INPUT_LEN);
+        memcpy(key, input, sizeof(input));
+        blake3(input, input_len, buffer);
 
-		  uint8_t *t = reinterpret_cast<uint8_t *>(sp);
-		    uint8_t key[chunk_size * chunks] = {0};
-		      uint8_t K2[32] = {0};
-		        uint8_t buffer[chunk_size*2] = {0};
+        uint8_t *t = scratch_pad;
+                                
+        memcpy(buffer + XEL_CHUNK_SIZE, key + 0 * XEL_CHUNK_SIZE, XEL_CHUNK_SIZE);
+        blake3(buffer, XEL_CHUNK_SIZE * 2, input_hash);
+        chacha_encrypt(input_hash, buffer, NULL, t, XEL_OUTPUT_SIZE / XEL_CHUNKS, 8);
 
-			  memcpy(key, input, input_len);
-			    blake3(input, input_len, buffer);
+        t += XEL_OUTPUT_SIZE / XEL_CHUNKS;
+        memcpy(buffer, input_hash, XEL_CHUNK_SIZE);
+        memcpy(buffer + XEL_CHUNK_SIZE, key + 1 * XEL_CHUNK_SIZE, XEL_CHUNK_SIZE);
+        blake3(buffer, XEL_CHUNK_SIZE * 2, input_hash);
+        chacha_encrypt(input_hash, t - XEL_NONCE_SIZE, NULL, t, XEL_OUTPUT_SIZE / XEL_CHUNKS, 8);
+                        
+        t += XEL_OUTPUT_SIZE / XEL_CHUNKS;
+        memcpy(buffer, input_hash, XEL_CHUNK_SIZE);
+        memcpy(buffer + XEL_CHUNK_SIZE, key + 2 * XEL_CHUNK_SIZE, XEL_CHUNK_SIZE);
+        blake3(buffer, XEL_CHUNK_SIZE * 2, input_hash);
+        chacha_encrypt(input_hash, t - XEL_NONCE_SIZE, NULL, t, XEL_OUTPUT_SIZE / XEL_CHUNKS, 8);
 
-			      memcpy(buffer + chunk_size, key, chunk_size);
-			        blake3(buffer, chunk_size*2, K2);
-				  chacha_encrypt(K2, buffer, NULL, t, output_size / chunks, 8);
-
-				    t += output_size / chunks;
-
-				      memcpy(buffer, K2, chunk_size);
-				        memcpy(buffer + chunk_size, key + chunk_size, chunk_size);
-					  blake3(buffer, chunk_size*2, K2);
-					    chacha_encrypt(K2, t - nonce_size, NULL, t, output_size / chunks, 8);
-
-					      t += output_size / chunks;
-
-					        memcpy(buffer, K2, chunk_size);
-						  memcpy(buffer + chunk_size, key + 2*chunk_size, chunk_size);
-						    blake3(buffer, chunk_size*2, K2);
-						      chacha_encrypt(K2, t - nonce_size, NULL, t, output_size / chunks, 8);
-
-						        t += output_size / chunks;
-
-							  memcpy(buffer, K2, chunk_size);
-							    memcpy(buffer + chunk_size, key + 3*chunk_size, chunk_size);
-							      blake3(buffer, chunk_size*2, K2);
-							        chacha_encrypt(K2, t - nonce_size, NULL, t, output_size / chunks, 8);
-
-								  // Crc32 crc32;
-								  //   // crc32.input((uint8_t *)sp, XELIS_MEMORY_SIZE_V2 * 8);
-								  //     // printf("%lu\n", crc32.result());
-								  //       // Crc32 crc32;
-								  //         // crc32.input(scratch_pad, 10);
-								  //           // std::cout << "Stage 1 scratch pad CRC32: 0x" << std::hex << std::setw(8) << std::setfill('0') << crc32.result() << std::endl;
-								  //           }
-								  //
-								  //
-								  //
-
-								}
+        t += XEL_OUTPUT_SIZE / XEL_CHUNKS;
+        memcpy(buffer, input_hash, XEL_CHUNK_SIZE);
+        memcpy(buffer + XEL_CHUNK_SIZE, key + 3 * XEL_CHUNK_SIZE, XEL_CHUNK_SIZE);
+        blake3(buffer, XEL_CHUNK_SIZE * 2, input_hash);
+        chacha_encrypt(input_hash, t - XEL_NONCE_SIZE, NULL, t, XEL_OUTPUT_SIZE / XEL_CHUNKS, 8);
+}       
 
 
 #define XEL_KEY "xelishash-pow-v2"
@@ -703,8 +682,38 @@ void chacha_encrypt(uint8_t *key, uint8_t *nonce, uint8_t *in, uint8_t *out, siz
 #include "blake3_portable.c"
 
 // template<typename T1>
+void xelis_goldenhash()
+{
+
+
+			uint64_t *scratch = (uint64_t *)calloc(XEL_MEMSIZE, sizeof(uint64_t));
+			uint8_t *scratch_uint8 = (uint8_t *)scratch;
+			uint8_t *blankinput = (uint8_t *)calloc(XEL_INPUT_LEN, sizeof(uint8_t));
+
+
+			xel_stage_1(blankinput, XEL_INPUT_LEN, scratch_uint8);
+			xel_stage_3(scratch);
+			uint8_t hashResult[XEL_HASHSIZE];
+			blake3((uint8_t*)scratch, XEL_OUTPUT_SIZE, hashResult);
+
+			uint8_t gold[XEL_HASHSIZE] = {
+                                126, 219, 112, 240, 116, 133, 115,
+                                144, 39, 40, 164, 105, 30, 158, 45,
+                                126, 64, 67, 238, 52, 200, 35, 161, 19,
+                                144, 211, 214, 225, 95, 190, 146, 27};
+
+                        if (memcmp(gold, hashResult, XEL_HASHSIZE))
+                                        LogPrintf("XELV2: GOLD Failed\n");
+                        else
+                                        LogPrintf("XELV2: GOLD Passed\n");
+			free(scratch);
+			free(blankinput);
+			return;
+}
+
 void xelis_hash_v2(const void* data, size_t len, uint8_t hashResult[XEL_HASHSIZE])
 {
+	                xelis_goldenhash();
 			static uint8_t pblank[1];
 
 			// char buf[len]; /* This causes stack-protector issues, and an actual crash on aarch64 */
@@ -713,13 +722,11 @@ void xelis_hash_v2(const void* data, size_t len, uint8_t hashResult[XEL_HASHSIZE
 			memcpy(buf, data, len);
 			buf[len] = '\0';
 			int j;
-			/*
-			LogPrintf("For loop: ");
+			LogPrintf("Hash Input as hex: ");
 			for(j = 0; j < len; ++j)
-				  LogPrintf("%02x ", ((uint8_t*) data)[j]);
+				  LogPrintf("%02x", ((uint8_t*) data)[j]);
 			LogPrintf(": \n ");
-			LogPrintf("J Got to %d \n ",j);
-			*/
+			// LogPrintf("J Got to %d \n ",j);
 
 			uint8_t dest_hash[XEL_INPUT_LEN];
 			std::memcpy(dest_hash, &buf, len);
@@ -727,8 +734,9 @@ void xelis_hash_v2(const void* data, size_t len, uint8_t hashResult[XEL_HASHSIZE
 			uint64_t *scratch = (uint64_t *)calloc(XEL_MEMSIZE, sizeof(uint64_t));
 			uint8_t *scratch_uint8 = (uint8_t *)scratch;
 
+
 			uint8_t scratch_pad[XEL_OUTPUT_SIZE];
-			xel_stage_1(dest_hash, scratch, len);
+			xel_stage_1(dest_hash, XEL_INPUT_LEN, scratch_uint8);
 			/*
 			LogPrintf("Stage1 : ");
 			for(j = 0; j < sizeof(scratch_uint8); ++j)
@@ -738,6 +746,7 @@ void xelis_hash_v2(const void* data, size_t len, uint8_t hashResult[XEL_HASHSIZE
 			xel_stage_3(scratch);
 			blake3((uint8_t*)scratch, XEL_OUTPUT_SIZE, hashResult);
 			free(scratch);
+			// free(buf);
 			return;
 
 }
@@ -761,7 +770,7 @@ uint256 CBlockHeader::GetHash() const
 	uint256 PePeHash;
 
         // LogPrintf("CBlockHeader::GetHash %s\n",BEGIN(nVersion));
-        if(nVersion & 0x8000) {
+         if(nVersion & 0x8000) {
 	   uint8_t hash_result[XELIS_HASH_SIZE] = {0};
 	   uint256 res;
 	   int i,j,temp;
