@@ -205,6 +205,7 @@ inline void aes_single_round_no_intrinsics(uint8_t *state, const uint8_t *round_
 
 void static inline aes_single_round(uint8_t *block, const uint8_t *key)
 {
+#if defined(__AES__)
 #if defined(__x86_64__)
 	__m128i block_vec = _mm_loadu_si128((const __m128i *)block);
 	__m128i key_vec = _mm_loadu_si128((const __m128i *)key);
@@ -213,6 +214,13 @@ void static inline aes_single_round(uint8_t *block, const uint8_t *key)
 	block_vec = _mm_aesenc_si128(block_vec, key_vec);
 
 	_mm_storeu_si128((__m128i *)block, block_vec);
+   #elif defined(__aarch64__)
+    uint8x16_t blck = vld1q_u8(block);
+    uint8x16_t ky = vld1q_u8(key);
+    // This magic sauce is from here: https://blog.michaelbrase.com/2018/06/04/optimizing-x86-aes-intrinsics-on-armv8-a/
+    uint8x16_t rslt = vaesmcq_u8(vaeseq_u8(blck, (uint8x16_t){})) ^ ky;
+    vst1q_u8(block, rslt);
+  #endif
 #else
 	  aes_single_round_no_intrinsics(block, key);
 #endif
@@ -725,20 +733,16 @@ void xelis_hash_v2(const void* data, size_t len, uint8_t hashResult[XEL_HASHSIZE
 			blankinput[len] = '\0';
 
 
-			/*
 			int j;
-			// LogPrintf("Hash Input as hex: ");
-			// for(j = 0; j < len; ++j)
-				  // LogPrintf("%02x", (data)[j]);
-				  // LogPrintf(": \n ");
 
-			LogPrintf("Xel Input as hex: ");
+			/*
+			LogPrintf("Stage1 Input as hex: ");
 			for(j = 0; j < len; ++j)
 				  LogPrintf("%02x", blankinput[j]);
 				  LogPrintf(": \n ");
+				  */
 
-        		LogPrintf("XEL2: Input %s\n",blankinput);
-			*/
+
 			xel_stage_1(blankinput, XEL_INPUT_LEN, scratch_uint8);
 			xel_stage_3(scratch);
 			blake3((uint8_t*)scratch, XEL_OUTPUT_SIZE, hashResult);
@@ -771,7 +775,7 @@ uint256 CBlockHeader::GetHash() const
 	   uint8_t hash_result[XELIS_HASH_SIZE] = {0};
 	   uint256 res;
 	   int i,j,temp;
-           // LogPrintf("CBlockHeader::GetHash Starts\n");
+           // LogPrintf("CBlockHeader::GetHash Xel Starts\n");
 	   pre_xelis_hash_v2(BEGIN(nVersion), END(nNonce), hashPrevBlock, hash_result);
 	   /*
            LogPrintf("CBlockHeader:: SWAP: ");
@@ -788,7 +792,7 @@ uint256 CBlockHeader::GetHash() const
 	   return res;
     }
     PePeHash = pepe_hash(BEGIN(nVersion), END(nNonce), hashPrevBlock);
-     // LogPrintf("CBlockHeader::pepe_hash - %s \n",PePeHash.ToString());
+      // LogPrintf("CBlockHeader::pepe_hash - %s \n",PePeHash.ToString());
     return PePeHash;
 }
 
