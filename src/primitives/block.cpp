@@ -23,12 +23,14 @@
 
 #include "blake3.h"
 #include "chacha20.h"
+#if defined linux
 #if defined(__x86_64__)
   #include <emmintrin.h>
   #include <immintrin.h>
   #include <wmmintrin.h>
 #elif defined(__aarch64__)
   #include <arm_neon.h>
+#endif
 #endif
 
 
@@ -105,7 +107,6 @@ static inline void blake3(const uint8_t *input, int len, uint8_t *output) {
 #define XEL_CHUNKS (4)
 #define XEL_INPUT_LEN (112)
 
-#if !defined(__x86_64__)
 
 // AES S-box
 static const uint8_t sbox[256] = {
@@ -201,10 +202,13 @@ inline void aes_single_round_no_intrinsics(uint8_t *state, const uint8_t *round_
                         add_round_key(state, round_key);
 }
 
-#endif
 
 void static inline aes_single_round(uint8_t *block, const uint8_t *key)
 {
+<<<<<<< HEAD
+=======
+#if defined linux
+>>>>>>> c26a846
 #if defined(__AES__)
 #if defined(__x86_64__)
 	__m128i block_vec = _mm_loadu_si128((const __m128i *)block);
@@ -224,6 +228,12 @@ void static inline aes_single_round(uint8_t *block, const uint8_t *key)
 #else
 	  aes_single_round_no_intrinsics(block, key);
 #endif
+#endif
+
+#ifdef WIN32
+	  aes_single_round_no_intrinsics(block, key);
+#endif
+
 
 }
 #if defined(__x86_64__)
