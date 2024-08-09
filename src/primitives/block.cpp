@@ -23,7 +23,7 @@
 
 #include "blake3.h"
 #include "chacha20.h"
-#if defined linux
+#ifdef __linux__
 #if defined(__x86_64__)
   #include <emmintrin.h>
   #include <immintrin.h>
@@ -213,7 +213,8 @@ void static inline aes_single_round(uint8_t *block, const uint8_t *key)
 #ifdef WIN32
 	  aes_single_round_no_intrinsics(block, key);
 #endif
-#if defined linux
+
+#ifdef __linux__
 #if defined(__AES__)
 #if defined(__x86_64__)
 	__m128i block_vec = _mm_loadu_si128((const __m128i *)block);
@@ -775,11 +776,12 @@ uint256 CBlockHeader::GetPOWHash() const
 uint256 PePeHash;
 
         // LogPrintf("CBlockHeader::GetHash %s\n",BEGIN(nVersion));
+             LogPrintf("CBlockHeader::GetPOWHash Starts\n");
          if(nVersion & 0x8000) {
+             LogPrintf("CBlockHeader::GetPOWHash XEL\n");
            uint8_t hash_result[XELIS_HASH_SIZE] = {0};
            uint256 res;
            int i,j,temp;
-            // LogPrintf("CBlockHeader::GetHash Xel Starts\n");
            pre_xelis_hash_v2(BEGIN(nVersion), END(nNonce), hashPrevBlock, hash_result);
            /*
            LogPrintf("CBlockHeader:: SWAP: ");
@@ -795,6 +797,7 @@ uint256 PePeHash;
             // LogPrintf("CBlockHeader::xelis_hash %s\n",res.ToString());
            return res;
     }
+             LogPrintf("CBlockHeader::GetPOWHash Pepe\n");
     PePeHash = pepe_hash(BEGIN(nVersion), END(nNonce), hashPrevBlock);
        // LogPrintf("CBlockHeader::pepe_hash - %s \n",PePeHash.ToString());
     return PePeHash;
@@ -809,6 +812,7 @@ uint256 PePeHash;
 
         // LogPrintf("CBlockHeader::GetHash %s\n",BEGIN(nVersion));
          if(nVersion & 0x8000) {
+             LogPrintf("CBlockHeader::GetHash XEL\n");
            uint8_t hash_result[XELIS_HASH_SIZE] = {0};
            uint256 res;
            int i,j,temp;
@@ -828,6 +832,7 @@ uint256 PePeHash;
             // LogPrintf("CBlockHeader::xelis_hash %s\n",res.ToString());
            return res;
     }
+             LogPrintf("CBlockHeader::GetHash Pepe\n");
     PePeHash = pepe_hash(BEGIN(nVersion), END(nNonce), hashPrevBlock);
        // LogPrintf("CBlockHeader::pepe_hash - %s \n",PePeHash.ToString());
     return PePeHash;
