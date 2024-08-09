@@ -776,9 +776,7 @@ uint256 CBlockHeader::GetPOWHash() const
 uint256 PePeHash;
 
         // LogPrintf("CBlockHeader::GetHash %s\n",BEGIN(nVersion));
-             LogPrintf("CBlockHeader::GetPOWHash Starts\n");
          if(nVersion & 0x8000) {
-             LogPrintf("CBlockHeader::GetPOWHash XEL\n");
            uint8_t hash_result[XELIS_HASH_SIZE] = {0};
            uint256 res;
            int i,j,temp;
@@ -797,7 +795,6 @@ uint256 PePeHash;
             // LogPrintf("CBlockHeader::xelis_hash %s\n",res.ToString());
            return res;
     }
-             LogPrintf("CBlockHeader::GetPOWHash Pepe\n");
     PePeHash = pepe_hash(BEGIN(nVersion), END(nNonce), hashPrevBlock);
        // LogPrintf("CBlockHeader::pepe_hash - %s \n",PePeHash.ToString());
     return PePeHash;
@@ -812,7 +809,6 @@ uint256 PePeHash;
 
         // LogPrintf("CBlockHeader::GetHash %s\n",BEGIN(nVersion));
          if(nVersion & 0x8000) {
-             LogPrintf("CBlockHeader::GetHash XEL\n");
            uint8_t hash_result[XELIS_HASH_SIZE] = {0};
            uint256 res;
            int i,j,temp;
@@ -832,7 +828,6 @@ uint256 PePeHash;
             // LogPrintf("CBlockHeader::xelis_hash %s\n",res.ToString());
            return res;
     }
-             LogPrintf("CBlockHeader::GetHash Pepe\n");
     PePeHash = pepe_hash(BEGIN(nVersion), END(nNonce), hashPrevBlock);
        // LogPrintf("CBlockHeader::pepe_hash - %s \n",PePeHash.ToString());
     return PePeHash;
