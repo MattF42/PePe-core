@@ -205,10 +205,7 @@ inline void aes_single_round_no_intrinsics(uint8_t *state, const uint8_t *round_
 
 void static inline aes_single_round(uint8_t *block, const uint8_t *key)
 {
-<<<<<<< HEAD
-=======
 #if defined linux
->>>>>>> c26a846
 #if defined(__AES__)
 #if defined(__x86_64__)
 	__m128i block_vec = _mm_loadu_si128((const __m128i *)block);

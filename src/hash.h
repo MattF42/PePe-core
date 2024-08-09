@@ -362,7 +362,6 @@ extern double algoHashTotal[20];
 extern int algoHashHits[20];
 
 
-#include "util.h"
 template<typename T1>
 inline uint256 pepe_hash(const T1 pbegin, const T1 pend, const uint256 PrevBlockHash)
 {
