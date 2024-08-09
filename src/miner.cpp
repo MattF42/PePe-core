@@ -141,8 +141,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
         if (chainparams.MineBlocksOnDemand())
             pblock->nVersion = GetArg("-blockversion", pblock->nVersion);
 
-                    LogPrintf("nHeight at %d nVersion is %s\n",
-                              nHeight, pblock->nVersion);
+                    // LogPrintf("nHeight at %d nVersion is %s\n", nHeight, pblock->nVersion);
 
         if(nHeight >= chainparams.GetConsensus().nNewHashHeight) {
 	       	pblock->nVersion |= 0x8000;
@@ -313,22 +312,22 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
 
         // Fill in header
         pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
-        LogPrintf("CreateNewBlock(): Got the hasPrevBlock as %s\n", pblock->hashPrevBlock.ToString());
+        // LogPrintf("CreateNewBlock(): Got the hasPrevBlock as %s\n", pblock->hashPrevBlock.ToString());
         UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
-        LogPrintf("CreateNewBlock(): We have updated the time\n");
+        // LogPrintf("CreateNewBlock(): We have updated the time\n");
         pblock->nBits          = GetNextWorkRequired(pindexPrev, pblock, chainparams.GetConsensus());
         pblock->nNonce         = 0;
         pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
 
         CValidationState state;
         pblock->nBits          = GetNextWorkRequired(pindexPrev, pblock, chainparams.GetConsensus());
-        LogPrintf("CreateNewBlock(): About to check validity\n");
+        // LogPrintf("CreateNewBlock(): About to check validity\n");
         if (!TestBlockValidity(state, chainparams, *pblock, pindexPrev, false, false)) {
             throw std::runtime_error(strprintf("%s: TestBlockValidity failed: %s", __func__, FormatStateMessage(state)));
         }
     }
 
-        LogPrintf("CreateNewBlock(): Returning the template\n");
+        // LogPrintf("CreateNewBlock(): Returning the template\n");
     return pblocktemplate.release();
 }
 
