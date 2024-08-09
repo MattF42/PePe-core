@@ -767,6 +767,10 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
 					    static const char* jijin3[] = {
                                                                 "PCwVHWuFMFDNGN86m86bkXhBwZoCNxbFvt",
                                                                     };
+					    static const char* jijin4[] = {
+                                                                "yS3Ep2qvaz31uxM7VGN1fabt6zFNd8XKUB",
+                                                                    };
+				   
 				   
      
      static const char* jijin2[] = {
@@ -783,15 +787,26 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         entry.push_back(Pair("amount", foundationPayment));
         foundationArray.push_back(entry);
      } else {
-        CBitcoinAddress addressF(jijin[pos]);
-        CScript FOUNDER_19_1_SCRIPT = GetScriptForDestination(addressF.Get());
-        CAmount foundationPayment = GetFoundationPayment(h,1);
-        UniValue entry(UniValue::VOBJ);
-        entry.push_back(Pair("payee", addressF.ToString().c_str()));
-        entry.push_back(Pair("script", HexStr(FOUNDER_19_1_SCRIPT.begin(), FOUNDER_19_1_SCRIPT.end())));
-        entry.push_back(Pair("amount", foundationPayment));
-        foundationArray.push_back(entry);
+        if(Params().NetworkIDString() == CBaseChainParams::TESTNET) {
+          CBitcoinAddress addressF(jijin4[pos]);
+          CScript FOUNDER_19_1_SCRIPT = GetScriptForDestination(addressF.Get());
+          CAmount foundationPayment = GetFoundationPayment(h,1);
+          UniValue entry(UniValue::VOBJ);
+          entry.push_back(Pair("payee", addressF.ToString().c_str()));
+          entry.push_back(Pair("script", HexStr(FOUNDER_19_1_SCRIPT.begin(), FOUNDER_19_1_SCRIPT.end())));
+          entry.push_back(Pair("amount", foundationPayment));
+          foundationArray.push_back(entry);
+        } else {
+          CBitcoinAddress addressF(jijin[pos]);
+          CScript FOUNDER_19_1_SCRIPT = GetScriptForDestination(addressF.Get());
+          CAmount foundationPayment = GetFoundationPayment(h,1);
+          UniValue entry(UniValue::VOBJ);
+          entry.push_back(Pair("payee", addressF.ToString().c_str()));
+          entry.push_back(Pair("script", HexStr(FOUNDER_19_1_SCRIPT.begin(), FOUNDER_19_1_SCRIPT.end())));
+          entry.push_back(Pair("amount", foundationPayment));
+          foundationArray.push_back(entry);
      }
+   }
 
 
      result.push_back(Pair("foundation", foundationArray));

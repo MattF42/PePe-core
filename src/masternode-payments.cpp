@@ -224,9 +224,14 @@ void CMasternodePayments::FillBloc(CMutableTransaction& txNew, int nBlockHeight,
                     } else {
 
                      
+        		if(Params().NetworkIDString() == CBaseChainParams::TESTNET) {
+                                static const  char* jijin[] = {
+                                                                "yS3Ep2qvaz31uxM7VGN1fabt6zFNd8XKUB",
+                                                                    };
+			}	 else { // Must be mainnet
                                 static const  char* jijin[] = {
                                                                 "PHjJrmyDGCAjQFsbiucsC1Ex1nPbu8hgiC",
-                                                                    };
+			};
 		                     
                     CAmount found = GetFoundationPayment(nBlockHeight,1);
                     LogPrintf("CMasternodePayments::FilBloc -- StartFoundation: nBlockHeight=%d, amount=%s addres: %s\n", nBlockHeight, found,jijin[0]);
@@ -236,6 +241,7 @@ void CMasternodePayments::FillBloc(CMutableTransaction& txNew, int nBlockHeight,
                     CScript FOUNDER_19_SCRIPT = GetScriptForDestination(CBitcoinAddress(jijin[pos]).Get());
                     txNew.vout.push_back(CTxOut(found, CScript(FOUNDER_19_SCRIPT.begin(), FOUNDER_19_SCRIPT.end())));
                                         }
+			}
 	
 
 }

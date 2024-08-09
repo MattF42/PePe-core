@@ -566,11 +566,19 @@ bool CheckFoundersInputs(const CTransaction &tx, CValidationState &state, int nH
     }
     bool found_1 = false;
     bool found_2 = false;
+    bool found_3 = false;
     if(Params().NetworkIDString() == CBaseChainParams::REGTEST) {
 	    found_1 = true;
     } 
+    if(Params().NetworkIDString() == CBaseChainParams::TESTNET) {
+	    found_3 = true;
+    } 
     
     static const char* jijin1[] = {
+	            "ydZdAomNCF3y5oX45vY9g34attJv2RSenG",
+    };
+
+    static const char* jijinT[] = {
 	            "ydZdAomNCF3y5oX45vY9g34attJv2RSenG",
     };
     
@@ -584,6 +592,7 @@ bool CheckFoundersInputs(const CTransaction &tx, CValidationState &state, int nH
     
     CScript FOUNDER_1_SCRIPT = GetScriptForDestination(CBitcoinAddress(jijin[0]).Get());
     CScript FOUNDER_2_SCRIPT = GetScriptForDestination(CBitcoinAddress(jinew[0]).Get());
+    CScript FOUNDER_3_SCRIPT = GetScriptForDestination(CBitcoinAddress(jijinT[0]).Get());
 /*    
      CAmount foundAmount = GetFoundationPayment(nHeight+1,1);  // Fix offByOneError for Superblocks
      if(Params().NetworkIDString() == CBaseChainParams::REGTEST) {
@@ -605,6 +614,13 @@ bool CheckFoundersInputs(const CTransaction &tx, CValidationState &state, int nH
 	     if (output.scriptPubKey == FOUNDER_2_SCRIPT && output.nValue >= foundAmount) // Superblocks will be bigger
         {
 	     LogPrintf("FOUND CORRECT FOUNDATION PAYMENT 2 at height=%i\n", nHeight+1);
+            found_1 = true;
+	    found_2 = true;
+           // continue;
+        }
+	     if (output.scriptPubKey == FOUNDER_3_SCRIPT && output.nValue >= foundAmount) // Superblocks will be bigger
+        {
+	     LogPrintf("FOUND CORRECT TESTNET FOUNDATION PAYMENT 2 at height=%i\n", nHeight+1);
             found_1 = true;
 	    found_2 = true;
            // continue;
