@@ -1169,6 +1169,18 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
              } 
         }
 
+        if (sporkManager.IsSporkActive(SPORK_16_XELISV2 )) {
+            if (nVersion < MIN_PEER_SPORK_16)
+              {
+                // disconnect from peers older than this proto version
+               LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, nVersion);
+               connman.PushMessageWithVersion(pfrom, INIT_PROTO_VERSION, NetMsgType::REJECT, strCommand, REJECT_OBSOLETE,
+                               strprintf("Version must be %d or greater", MIN_PEER_PROTO_VERSION));
+               pfrom->fDisconnect = true;
+               return false;
+             } 
+        }
+
         /* Given that SPORK 8 activated after Spork 15, we want to get rid of the peers that can't get past block 1070288 */
 
         if (sporkManager.IsSporkActive(SPORK_8_MASTERNODE_PAYMENT_ENFORCEMENT_DEFAULT )) { 

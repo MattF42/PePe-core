@@ -176,7 +176,7 @@ unsigned int GetNextWorkRequiredBTC(const CBlockIndex* pindexLast, const CBlockH
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
-    if((pindexLast->nHeight+1) == params.nNewHashHeight) return params.nNewHashBits;
+    if((pindexLast->nHeight+1) == params.nNewHashHeight) return params.nNewHashBits; // Prevent a silly stall at hash algo change 
 
     // Most recent algo first
     if (pindexLast->nHeight + 1 >= params.nPowDGWHeight) {

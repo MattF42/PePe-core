@@ -206,7 +206,6 @@ inline void aes_single_round_no_intrinsics(uint8_t *state, const uint8_t *round_
 void static inline aes_single_round(uint8_t *block, const uint8_t *key)
 {
 #if defined(__aarch64__)
-  // printf("AARCH64\n");
   aes_single_round_no_intrinsics(block, key);
 #endif
 

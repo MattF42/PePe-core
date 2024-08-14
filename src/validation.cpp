@@ -1355,6 +1355,8 @@ CAmount GetBlockSubsidy(int nPrevBits, int nPrevHeight, const Consensus::Params&
 {
     CAmount nSubsidy = 0 * COIN;
 
+    // CAmount CBonusAmount = 0 * COIN;
+
     if(nPrevHeight < 129600){
         nSubsidy = 100000 *COIN;
     }else if(nPrevHeight < 259200){
@@ -1388,7 +1390,21 @@ CAmount GetBlockSubsidy(int nPrevBits, int nPrevHeight, const Consensus::Params&
             nSubsidy = 1000000*COIN;
         }
     }
+    // With the XEL2 adoption, we will reward more for 12 months, tailing down slowly month by month
+    // 4320 blocks per day -> 129600 blocks per 30 day period
     
+    if(nPrevHeight >= 1930000) { // Extra XelV2 rewards
+      int BonusHeight = (1930000 + (25 * 129600)) - nPrevHeight;
+      if(BonusHeight > 0) {
+        int quotient = BonusHeight/24;
+        if (quotient > 0 ) {
+        int bonusAmount = 500 * quotient;
+        nSubsidy = nSubsidy + bonusAmount*COIN;
+        }
+      }
+    }
+    
+    // So called SuperBlocks
     if(nPrevHeight >= FOUNDATION_HEIGHT){
         if(nPrevHeight % 1000 == 998) {
             nSubsidy = nSubsidy * 5;
@@ -1397,8 +1413,6 @@ CAmount GetBlockSubsidy(int nPrevBits, int nPrevHeight, const Consensus::Params&
         }
     }
 
-    // Hard fork to reduce the block reward by 10 extra percent (allowing budget/superblocks)
-    //CAmount nSuperblockPart = (nPrevHeight > consensusParams.nBudgetPaymentsStartBlock) ? nSubsidy/10 : 0;
 
     return nSubsidy;
 }
@@ -2059,7 +2073,12 @@ int32_t ComputeBlockVersion(const CBlockIndex* pindexPrev, const Consensus::Para
 
   
     if(pindexPrev->nHeight >= params.nNewHashHeight - 1) {
+ 	if (sporkManager.IsSporkActive(SPORK_16_XELISV2)) {
            nVersion |= 0x8000;
+	}
+       if(Params().NetworkIDString() == CBaseChainParams::TESTNET) {
+           nVersion |= 0x8000;
+        } 
            // LogPrintf("ComputeBlockVersion: nHeight at %d so setting nVersion to %s\n", pindexPrev->nHeight, nVersion);
  } 
     // LogPrintf("ComputeBlockVersion returns  %s \n", nVersion);
