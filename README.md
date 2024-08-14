@@ -38,7 +38,7 @@ With enough support - PEPEPOW is set to become the second most popular proof-of-
 </tr>
 <tr>
 <td>Algorithm</td>
-<td>memehash</td>
+<td>memehash until block 1930000 then XelisV2</td>
 </tr>
 <tr>
 <td>Block Time</td>
@@ -90,7 +90,11 @@ Future and Historical Reward Structure:
 <TD>>385000-514600</TD><TD>25000</TD></TR>
 <TD>>514600-644200</TD><TD>12500</TD></TR>
  <TD>>644200-773800</TD><TD>6250</TD></TR>
-<TD>>773800+</TD><TD>5000</TD></TR>
+<TD>>773800-1930000</TD><TD>5000</TD></TR>
+<TD>>1930000-2059600</TD><TD>17000</TD></TR>
+<TD>>2059600-2189200</TD><TD>16500</TD></TR>
+<TD>>2189200-2318800</TD><TD>16000</TD></TR>
+<TD>>Then reducing by 500 every 129600 Blocks until a minimum of</TD><TD>5000</TD></TR>
 </TBODY>
 </TABLE>
 

@@ -1396,13 +1396,26 @@ CAmount GetBlockSubsidy(int nPrevBits, int nPrevHeight, const Consensus::Params&
     if(nPrevHeight >= 1930000) { // Extra XelV2 rewards
       int BonusHeight = (1930000 + (25 * 129600)) - nPrevHeight;
       if(BonusHeight > 0) {
-        int quotient = BonusHeight/24;
+        int quotient = BonusHeight/(129600); // Lol - do the maths right Foz
         if (quotient > 0 ) {
         int bonusAmount = 500 * quotient;
         nSubsidy = nSubsidy + bonusAmount*COIN;
         }
       }
     }
+
+    if(Params().NetworkIDString() == CBaseChainParams::TESTNET) {
+    if(nPrevHeight >= 3950) { // Extra XelV2 rewards
+      int BonusHeight = (3950 + (25 * 100)) - nPrevHeight;
+      if(BonusHeight > 0) {
+        int quotient = BonusHeight/(100); // Lol - do the maths right Foz
+        if (quotient > 0 ) {
+        int bonusAmount = 500 * quotient;
+        nSubsidy = nSubsidy + bonusAmount*COIN;
+        }
+      }
+    }
+    }  // End Testnet
     
     // So called SuperBlocks
     if(nPrevHeight >= FOUNDATION_HEIGHT){
