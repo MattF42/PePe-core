@@ -23,8 +23,12 @@ padding:0;
 }
 
 .QFrame {
-    background-color:transparent;
+    /*background-color:transparent;*/
+    background-color: rgba(75, 0, 110, 0.5); /* 50% transparent*/
     border:0px solid #2e0042;
+    color: #ffffff; /* white text */
+    padding: 5px;
+    border-radius: 4px;
 }
 
 
@@ -83,11 +87,12 @@ QMenuBar::item {
    /*padding: 5px;*/
 }
 QMenu::item:hover {
-    background-color:#2e0042;
+    background-color:#4b006e;
+    color: #ffffff
 }
 QMenu::item:selected {
-    background-color:#2e0042;
-    color: #2e0042
+    background-color:#4b006e;
+    color: #ffffff
 }
  
  /* -------------------Checkbox--------------------- */
@@ -134,26 +139,29 @@ QPushButton {
      vertical-align: middle;     
      padding: 8px 14px; 
      border-radius: 4px;    
-     color: #2e0042;
-     background-color: transparent;
-     border: 1px solid #2e0042;
+     color: #fff;
+     background-color: #2e0042;
+     border: 1px solid #ffffff;
  }
  QPushButton:hover {
      color: #fff;
-     background-color: #2e0042;
-     border-color: #2e0042;
+     background-color: #660099;
+     border-color: #ffffff;
  }
  QPushButton:focus {
-     border-color: #2e0042;
+     border-color: #660099;
     
  }
  QPushButton:pressed {     
-     border-color: #2e0042
+    color: #fff;
+    background-color: #330066;
+    border-color: #fff
+
  } 
  QPushButton:disabled {
      color: #3f3f5b;
      background-color: transparent;     
-     border-color: #2e0042;
+     border-color: #ffffff;
  }
  
  /* -------------------Textbox--------------------- */
@@ -185,6 +193,7 @@ QPushButton {
      min-height:24px;   
      background-color:#2e0042;
      border: 1px solid #3f3f5b;    
+     color: #ffffff; /* White text */
  }
 
 /* 
@@ -201,7 +210,8 @@ QComboBox::down-arrow {
 }
 QComboBox QListView {
     background-color:#2e0042;
-    border:1px solid #3f3f5b;   
+    border:1px solid #3f3f5b;
+    color: #ffffff; /* White text */   
     padding-right:1px;
     padding-left:1px;
    
@@ -209,6 +219,7 @@ QComboBox QListView {
 
 QComboBox>QListView::item {
     padding: 5px;
+    color: #ffffff; /* White text */
 }
 
 QComboBox::item:alternate {
@@ -217,6 +228,7 @@ QComboBox::item:alternate {
 QComboBox::item:selected {   
     border:0px solid transparent;
     background:#2e0042;
+    color: #ffffff; /* White text */
 }
 QComboBox::indicator {
     background-color:transparent;
@@ -296,21 +308,22 @@ QHeaderView::section {
     /* Table - has to be selected as a class otherwise it throws off QCalendarWidget */
      border:0px;
      border-collapse: collapse;
-     gridline-color: #3f3f5b;
+     gridline-color: #84c6d6d6;
      font-size:12px;
      
  }
  QTableView::item {
     /* Table Item */    
-     background: #b300ff;     
+     background: #2e0042;
+     color: #ffffff     
      border:0px;     
      margin: 0;
      font-size:12px;
  }
  QTableView::item:selected {
     /* Table Item Selected */
-     background: #2e0042;    
-     color: #2e0042 
+     background: #0e1073;    
+     color: #ffffff 
  }
  
  /* -------------------Scrollbar--------------------- */
@@ -418,7 +431,7 @@ QScrollBar {
 }
 .QTabWidget QTabBar::tab:selected, .QTabWidget QTabBar::tab:hover {
     background-color:#2e0042;
-    color:#2e0042;
+    color: #fff;;
 }
 
 /* -------------------MODAL OVERLAY--------------------- */
@@ -581,7 +594,9 @@ QWidget .QFrame#frameWallet {
 /* -------------------PRIVATESEND WIDGET--------------------- */
 QWidget .QFrame#framePrivateSend {
     /* PrivateSend Widget */
-     background-color:transparent;
+    /* background-color:transparent;*/
+     color: #fff;
+     background-color: #660099
      max-width: 451px;
      min-width: 451px;
      max-height: 350px;
@@ -682,14 +697,14 @@ QWidget .QFrame#framePrivateSend {
  
  QWidget .QFrame#framePrivateSend .QPushButton#privateSendInfo {
     /* Info Button */   
-     color: #2e0042;
-     background-color: transparent;
+     color: #fff;
+     background-color: #2e0042;
      border-color: #2e0042;
  }
  QWidget .QFrame#framePrivateSend .QPushButton#privateSendInfo:hover {
    
      color: #fff;
-     background-color: ##2e0042;
+     background-color: #2e0042;
      border-color: #2e0042;
  }
  QWidget .QFrame#framePrivateSend .QPushButton#privateSendInfo:pressed {
@@ -886,13 +901,13 @@ QDialog#CoinControlDialog .QLabel#labelCoinControlQuantityText {
  QDialog#CoinControlDialog .CoinControlTreeWidget#treeWidget::item:selected {
     /* Coin Control Item (selected) */   
      background: #2e0042;  
-     color: #2e0042 
+     color: #fff 
  }
  QDialog#CoinControlDialog .CoinControlTreeWidget#treeWidget::item:checked {
     /* Coin Control Item (checked) */
   
      background: #2e0042;  
-     color: #2e0042 
+     color: #fff 
  }
 
 
