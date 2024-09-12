@@ -2,10 +2,10 @@
 /* reset all */
 * {
     color: #d3d3e0;
-    font-size:12px;
+    font-size:13px; /*12 -> 13*/
     font-family: Arial, Helvetica, sans-serif;
     outline:none;
-    background-color: transparent;
+    background-color: #2e0042;
     transition: border .2s linear,color .2s linear,width .2s linear,background-color .2s linear;
     /* margin: 0px;
     padding: 0px; */
@@ -24,7 +24,7 @@ padding:0;
 
 .QFrame {
     /*background-color:transparent;*/
-    background-color: rgba(75, 0, 110, 0.5); /* 50% transparent*/
+    background-color: rgba(75, 0, 110, 0.35); /* 50%->35% transparent*/
     border:0px solid #2e0042;
     color: #ffffff; /* white text */
     padding: 5px;
@@ -62,7 +62,7 @@ QToolBar > QToolButton {
     
  }
  QToolBar > QToolButton:hover{
-     background-color: #b300ff
+     background-color: #660099
  }
  QToolBar > QToolButton:checked {
      background-color:#2e0042;
@@ -219,16 +219,16 @@ QComboBox QListView {
 
 QComboBox>QListView::item {
     padding: 5px;
-    color: #ffffff; /* White text */
+    color: #0e056ebd;
 }
 
 QComboBox::item:alternate {
-    background:#2e0042;
+    background:#680f8ebb;
 }
 QComboBox::item:selected {   
     border:0px solid transparent;
-    background:#2e0042;
-    color: #ffffff; /* White text */
+    background:#08675abb;
+ /*    color: #ffffff;  White text */
 }
 QComboBox::indicator {
     background-color:transparent;
@@ -894,7 +894,7 @@ QDialog#CoinControlDialog .QLabel#labelCoinControlQuantityText {
  QDialog#CoinControlDialog .CoinControlTreeWidget#treeWidget::item {
     
      padding:3px 5px;
-     background: #b300ff;
+     background: #660099;
      border-right: 1px solid #3f3f5b;
      border-bottom: 1px solid #3f3f5b;
  }
