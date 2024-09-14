@@ -1,7 +1,8 @@
 
 /* reset all */
 * {
-    color: #d3d3e0;
+    /*color: #d3d3e0;*/
+    color: #fff;
     font-size:13px; /*12 -> 13*/
     font-family: Arial, Helvetica, sans-serif;
     outline:none;
@@ -159,8 +160,8 @@ QPushButton {
 
  } 
  QPushButton:disabled {
-     color: #3f3f5b;
-     background-color: transparent;     
+     color: #fff;
+     background-color: #660099;     
      border-color: #ffffff;
  }
  
@@ -450,7 +451,7 @@ QWidget#bgWidget {
      background-color:transparent;
  }
  QWidget#contentWidget { /* The actual content with the text/buttons/etc... */
-border-image: url(':/images/light/drkblue_walletFrame_bg') 0 0 0 0 stretch stretch;
+border-image: url(':/images/crownium/drkblue_walletFrame_bg') 0 0 0 0 stretch stretch;
 border-top:0px solid #000;
 margin:0;
 padding-top:20px;

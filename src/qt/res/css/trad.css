@@ -4,7 +4,8 @@ WalletFrame {
     border-top:0px solid #000;
     margin:0;
     padding:0;
-    background-color: rgba(0, 0, 0, 0.5);  /* 50% transparent */
+    color: #fff
+    background-color: rgba(0, 0, 0, 0.7);  /* 50% transparent */
 }
 
 /* MODAL OVERLAY */
