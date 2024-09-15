@@ -5,6 +5,16 @@ margin:0;
 padding:0;
 }
 
+/* Global Styles */
+* {
+    color: #FFFFFF; /* Set default text color to white */
+    font-size: 13px;
+    font-family: Arial, Helvetica, sans-serif;
+    outline: none;
+    background-color: #2e0042;
+    /* Other styles */
+}
+
 .QFrame {
     /*background-color:transparent;*/
     background-color: rgba(75, 0, 110, 0.35); /* 50%->35% transparent*/
@@ -30,7 +40,7 @@ a, QDialog a, *::Link{
 
 QToolBar, QStatusBar {
     background-color:#2e0042;
-
+    color: #ffffff
     padding:0;
     margin:0;
     border:0px;
@@ -155,7 +165,8 @@ QPushButton {
      min-height:24px;     
      padding:3px;
      background-color:#2e0042;
-     border: 1px solid #3f3f5b;    
+     border: 1px solid #3f3f5b;
+     color: #ffffff;    
  }
  
  .QValidatedLineEdit:disabled, .QLineEdit:disabled {
@@ -261,7 +272,8 @@ QAbstractSpinBox::down-arrow {
 QHeaderView::section {
     /* Table Header Sections */
      qproperty-alignment:center;   
-     background: #2e0042;     
+     background: #2e0042;
+     color: #ffffff; /* White font*/     
      min-height:25px;
      font-weight:bold;    
      border-top:1px solid #3f3f5b;
@@ -286,12 +298,12 @@ QHeaderView::section {
      image:url(':/images/light/drkblue_upArrow_small');
  }
 
-/* 启用交替行颜色 */
+/*------ Enable alternating row colors ------*/
 QTableView, QTreeView, QListView {
     alternating-row-colors: true;
 }
 
-/* 定义QTableView的交替行样式 */
+/* define QTableView alternating */
 QTableView {
     background-color: #2e0042;
     alternate-background-color: #3f005b;
@@ -312,7 +324,7 @@ QTableView::item:selected {
     color: #ffffff;
 }
 
-/* 定义QTreeView的交替行样式 */
+/* define QTreeView alternating */
 QTreeView {
     background-color: #2e0042;
     alternate-background-color: #3f005b;
@@ -333,7 +345,7 @@ QTreeView::item:selected {
     color: #ffffff;
 }
 
-/* 定义QListView的交替行样式 */
+/* define QListView alternating */
 QListView {
     background-color: #2e0042;
     alternate-background-color: #3f005b;
@@ -354,7 +366,7 @@ QListView::item:selected {
     color: #ffffff;
 }
 
-/* 定义QComboBox下拉列表的交替行样式 */
+/* define QComboBox drop list alternating */
 QComboBox QListView {
     background-color: #2e0042;
     alternate-background-color: #3f005b;
@@ -374,7 +386,7 @@ QComboBox QListView::item:selected {
     background-color: #0e1073;
     color: #ffffff;
 }
-/*END of 替行颜色*/
+/*------END of alternating row colors------*/
 
 
  
@@ -500,6 +512,7 @@ QWidget#bgWidget {
      padding:5px;
      margin-right: 20px;
      background-color:transparent;
+     color: #ffffff;
  }
  QWidget#contentWidget { /* The actual content with the text/buttons/etc... */
 border-image: url(':/images/crownium/drkblue_walletFrame_bg') 0 0 0 0 stretch stretch;
@@ -865,6 +878,7 @@ QWidget .QFrame#frame_2 QListView {
  /* To maximize backwards compatibility this formatting has been removed */
  QDialog#SendCoinsDialog QLabel#label {   
      font-size:14px;
+     color: #ffffff;
  }
  QDialog#SendCoinsDialog QLabel#labelBalance {   
      color:#11c26d;
@@ -1055,6 +1069,7 @@ QDialog#SignVerifyMessageDialog QPushButton#copySignatureButton_SM,
 QDialog#SignVerifyMessageDialog QPushButton#addressBookButton_VM {
     border-color: #3f3f5b;
     margin-left: 8px;
+    color: #ffffff;
 }
 
 
