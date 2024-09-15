@@ -5,16 +5,6 @@ margin:0;
 padding:0;
 }
 
-/* Global Styles */
-* {
-    color: #FFFFFF; /* Set default text color to white */
-    font-size: 13px;
-    font-family: Arial, Helvetica, sans-serif;
-    outline: none;
-    background-color: #2e0042;
-    /* Other styles */
-}
-
 .QFrame {
     /*background-color:transparent;*/
     background-color: rgba(75, 0, 110, 0.35); /* 50%->35% transparent*/
