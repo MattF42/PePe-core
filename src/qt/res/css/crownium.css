@@ -4,6 +4,18 @@
     font-size: 13px;
     font-family: Arial, Helvetica, sans-serif;
     outline: none;
+    /* Remove background-color */
+}
+
+/* Set background color for main window and dialog */
+QWidget {
+    background-color: #2e0042;
+}
+
+/* Retain the style for the background image widget */
+WalletFrame {
+    border-image: url(':/images/crownium/drkblue_walletFrame_bg') 0 0 0 0 stretch stretch;
+    /* Other styles */
 }
 
 /* Set text color for text widgets */
@@ -11,8 +23,33 @@ QLabel {
     color: #FFFFFF;
 }
 
+QPushButton {
+    color: #FFFFFF;
+}
+
 /* Set text color for input fields */
 QLineEdit, QTextEdit, QPlainTextEdit {
+    color: #FFFFFF;
+}
+
+/* Restore alternating row styles */
+QTableView {
+    background-color: #2e0042;
+    alternate-background-color: #3f005b;
+    color: #FFFFFF;
+}
+
+QTableView::item {
+    background-color: #2e0042;
+    color: #FFFFFF;
+}
+
+QTableView::item:alternate {
+    background-color: #3f005b;
+}
+
+QTableView::item:selected {
+    background-color: #0e1073;
     color: #FFFFFF;
 }
 
