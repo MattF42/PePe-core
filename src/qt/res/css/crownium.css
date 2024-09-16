@@ -1,3 +1,21 @@
+/* Global Styles */
+* {
+    color: #FFFFFF; /* Set default text color to white */
+    font-size: 13px;
+    font-family: Arial, Helvetica, sans-serif;
+    outline: none;
+}
+
+/* Set text color for text widgets */
+QLabel {
+    color: #FFFFFF;
+}
+
+/* Set text color for input fields */
+QLineEdit, QTextEdit, QPlainTextEdit {
+    color: #FFFFFF;
+}
+
 WalletFrame {
 border-image: url(':/images/crownium/drkblue_walletFrame_bg') 0 0 0 0 stretch stretch;
 border-top:0px solid #000;
