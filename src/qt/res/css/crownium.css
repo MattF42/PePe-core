@@ -384,51 +384,6 @@ QTreeView::item:selected {
     background-color: #0e1073;
     color: #ffffff;
 }
-
-/* define QListView alternating */
-QListView {
-    background-color: #2e0042;
-    alternate-background-color: #3f005b;
-    color: #ffffff;
-}
-
-QListView::item {
-    background-color: #2e0042;
-    color: #ffffff;
-}
-
-QListView::item:alternate {
-    background-color: #3f005b;
-}
-
-QListView::item:selected {
-    background-color: #0e1073;
-    color: #ffffff;
-}
-
-/* define QComboBox drop list alternating */
-QComboBox QListView {
-    background-color: #2e0042;
-    alternate-background-color: #3f005b;
-    color: #ffffff;
-}
-
-QComboBox QListView::item {
-    background-color: #2e0042;
-    color: #ffffff;
-}
-
-QComboBox QListView::item:alternate {
-    background-color: #3f005b;
-}
-
-QComboBox QListView::item:selected {
-    background-color: #0e1073;
-    color: #ffffff;
-}
-/*------END of alternating row colors------*/
-
-
  
  /* -------------------Scrollbar--------------------- */
 
