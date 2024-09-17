@@ -7,11 +7,6 @@
     /* Remove background-color */
 }
 
-/* Set background color for main window and dialog */
-QWidget {
-    background-color: #2e0042;
-}
-
 /* Retain the style for the background image widget */
 WalletFrame {
     border-image: url(':/images/crownium/drkblue_walletFrame_bg') 0 0 0 0 stretch stretch;
