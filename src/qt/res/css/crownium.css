@@ -7,10 +7,16 @@
     /* Remove background-color */
 }
 
-/* Retain the style for the background image widget */
-WalletFrame {
-    border-image: url(':/images/crownium/drkblue_walletFrame_bg') 0 0 0 0 stretch stretch;
-    /* Other styles */
+QDialog, QWidget {
+    background-color: #2e0042;
+    color: #ffffff;
+}
+
+QGroupBox {
+    background-color: #2e0042;
+    border: 1px solid #3f3f5b;
+    margin-top: 10px;
+    padding: 5px;
 }
 
 /* Set text color for text widgets */
@@ -24,6 +30,8 @@ QPushButton {
 
 /* Set text color for input fields */
 QLineEdit, QTextEdit, QPlainTextEdit {
+    background-color: #3f005b;
+    border: 1px solid #3f3f5b;
     color: #FFFFFF;
 }
 
@@ -133,6 +141,7 @@ QMenu::item:selected {
 
 QCheckBox {
     spacing: 5px;
+    color: #ffffff
 }
 QCheckBox::indicator {
     width: 16px;
@@ -322,7 +331,7 @@ QHeaderView::section {
      padding: 3px 5px;    
  }
  QHeaderView::section:hover{
-    background: #2e0042;    
+    background: #4b006e;    
  }
  
  QHeaderView::down-arrow, QHeaderView::up-arrow{
@@ -489,7 +498,7 @@ QScrollBar {
     border-right: 1px solid #3f3f5b;
 }
 .QTabWidget QTabBar::tab:selected, .QTabWidget QTabBar::tab:hover {
-    background-color:#2e0042;
+    background-color:#4b006e;
     color: #fff;;
 }
 
@@ -764,7 +773,7 @@ QWidget .QFrame#framePrivateSend {
  QWidget .QFrame#framePrivateSend .QPushButton#privateSendInfo:hover {
    
      color: #fff;
-     background-color: #2e0042;
+     background-color: #4b006e;
      border-color: #2e0042;
  }
  QWidget .QFrame#framePrivateSend .QPushButton#privateSendInfo:pressed {
