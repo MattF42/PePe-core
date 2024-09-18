@@ -7,6 +7,13 @@
     /* Remove background-color */
 }
 
+WalletFrame {
+    border-image: url(':/images/crownium/drkblue_walletFrame_bg') 0 0 0 0 stretch stretch;
+    border-top:0px solid #000;
+    margin:0;
+    padding:0;
+}
+
 QDialog, QWidget {
     background-color: #2e0042;
     color: #ffffff;
@@ -56,12 +63,6 @@ QTableView::item:selected {
     color: #FFFFFF;
 }
 
-WalletFrame {
-border-image: url(':/images/crownium/drkblue_walletFrame_bg') 0 0 0 0 stretch stretch;
-border-top:0px solid #000;
-margin:0;
-padding:0;
-}
 
 .QFrame {
     /*background-color:transparent;*/
@@ -141,7 +142,6 @@ QMenu::item:selected {
 
 QCheckBox {
     spacing: 5px;
-    color: #ffffff
 }
 QCheckBox::indicator {
     width: 16px;
