@@ -9,13 +9,13 @@
 
 WalletFrame {
     border-image: url(':/images/crownium/drkblue_walletFrame_bg') 0 0 0 0 stretch stretch;
-    border-top:0px solid #000;
+/*    border-top:0px solid #000;
     margin:0;
     padding:0;
-}
+}*/
 
 QDialog, QWidget {
-    background-color: #2e0042;
+    background-color: transparent;
     color: #ffffff;
 }
 
@@ -30,7 +30,7 @@ QPushButton {
 
 /* Set text color for input fields */
 QLineEdit, QTextEdit, QPlainTextEdit {
-    background-color: #3f005b;
+    background-color: transparent;
     border: 1px solid #3f3f5b;
     color: #FFFFFF;
 }
