@@ -19,13 +19,6 @@ QDialog, QWidget {
     color: #ffffff;
 }
 
-QGroupBox {
-    background-color: #2e0042;
-    border: 1px solid #3f3f5b;
-    margin-top: 10px;
-    padding: 5px;
-}
-
 /* Set text color for text widgets */
 QLabel {
     color: #FFFFFF;
