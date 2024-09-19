@@ -47,6 +47,9 @@ QTableView::item:selected {
     color: #FFFFFF;
 }
 
+QTableView::item:alternate:selected {
+    background-color: #0e1073;
+}
 
 .QFrame {
     /*background-color:transparent;*/
