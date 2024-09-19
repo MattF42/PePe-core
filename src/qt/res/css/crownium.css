@@ -4,12 +4,17 @@
     font-size: 13px;
     font-family: Arial, Helvetica, sans-serif;
     outline: none;
-    /* Remove background-color */
 }
 
 /* Retain the style for the background image widget */
 WalletFrame {
     border-image: url(':/images/crownium/drkblue_walletFrame_bg') 0 0 0 0 stretch stretch;
+}
+
+/*Set default background color for QDialog and QWidget*/
+QDialog, QWidget:not(.WalletFrame) {
+    background-color: #2e0042;
+    color: #ffffff;
 }
 
 /* Set text color for text widgets */
