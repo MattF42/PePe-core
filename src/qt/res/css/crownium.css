@@ -23,18 +23,6 @@ QPushButton {
 /* Set text color for input fields */
 QLineEdit, QTextEdit, QPlainTextEdit {
     background-color: #3f005b;
-    border: 1px solid #3f3f5b;
-    color: #FFFFFF;
-}
-
-/*Set default background color*/
-QDialog, QWidget {
-    background-color: #2e0042;
-    color: #ffffff;
-}
-QLineEdit, QTextEdit, QPlainTextEdit {
-    background-color: #3f005b;
-    border: 1px solid #3f3f5b;
     color: #FFFFFF;
 }
 
