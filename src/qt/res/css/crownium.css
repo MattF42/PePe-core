@@ -11,11 +11,12 @@ WalletFrame {
     border-image: url(':/images/crownium/drkblue_walletFrame_bg') 0 0 0 0 stretch stretch;
 }
 
-/*Set default background color for QDialog and QWidget*/
-QDialog, QWidget:not(.WalletFrame) {
+/*Set default background color*/
+QDialog {
     background-color: #2e0042;
     color: #ffffff;
 }
+
 
 /* Set text color for text widgets */
 QLabel {
