@@ -36,12 +36,12 @@ SplashScreen::SplashScreen(Qt::WindowFlags f, const NetworkStyle *networkStyle) 
     setWindowFlags(Qt::FramelessWindowHint);
 
     // set reference point, paddings
-    int paddingLeft             = 20;
-    int paddingTop              = 400;
-    int titleVersionVSpace      = 20;
-    int titleCopyrightVSpace    = 36;
+    int paddingLeft             = 25;
+    int paddingTop              = 440;
+    int titleVersionVSpace      = 30;
+    int titleCopyrightVSpace    = 40;
 
-    float fontFactor            = 0.8;
+    float fontFactor            = 1;
 
     // define text to place
     QString titleText       = tr("PEPEPOW Core");
@@ -64,7 +64,8 @@ SplashScreen::SplashScreen(Qt::WindowFlags f, const NetworkStyle *networkStyle) 
 
     QPainter pixPaint(&pixmap);
     //pixPaint.setPen(QColor(100,100,100));
-    pixPaint.setPen(QColor(255,255,255)); // white color text
+    //pixPaint.setPen(QColor(255,255,255)); // white color text
+    pixPaint.setPen(QColor(0,0,0)); // black color text
 
     // check font size and drawing with
     pixPaint.setFont(QFont(font, 28*fontFactor));

@@ -144,28 +144,28 @@ QCheckBox::indicator {
     height: 16px;
 }
 QCheckBox::indicator:unchecked {
-    range:url(':/images/light/unchecked');
+    image:url(':/images/light/unchecked');
 }
 QCheckBox::indicator:unchecked:hover {
-    range:url(':/images/light/unchecked');
+    image:url(':/images/light/unchecked');
 }
 QCheckBox::indicator:unchecked:pressed {
-    range:url(':/images/light/checked');
+    image:url(':/images/light/checked');
 }
 QCheckBox::indicator:checked {
-    range:url(':/images/light/checked');
+    image:url(':/images/light/checked');
 }
 QCheckBox::indicator:checked:hover {
-    range:url(':/images/light/checked');
+    image:url(':/images/light/checked');
 }
 QCheckBox::indicator:checked:pressed {
-    range:url(':/images/light/unchecked');
+    image:url(':/images/light/unchecked');
 }
 QCheckBox::indicator:indeterminate:hover {
-    range:url(':/images/light/unchecked');
+    image:url(':/images/light/unchecked');
 }
 QCheckBox::indicator:indeterminate:pressed {
-    range:url(':/images/light/checked');
+    image:url(':/images/light/checked');
 }
 
 /* -------------------Button--------------------- */
@@ -343,10 +343,7 @@ QHeaderView::section {
      image:url(':/images/light/drkblue_upArrow_small');
  }
 
-/*------ Enable alternating row colors ------*/
-QTableView, QTreeView, QListView {
-    alternating-row-colors: true;
-}
+
 
 /* define QTableView alternating */
 QTableView {
