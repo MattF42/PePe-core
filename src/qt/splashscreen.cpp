@@ -36,19 +36,19 @@ SplashScreen::SplashScreen(Qt::WindowFlags f, const NetworkStyle *networkStyle) 
     setWindowFlags(Qt::FramelessWindowHint);
 
     // set reference point, paddings
-    int paddingLeft             = 14;
-    int paddingTop              = 458;
-    int titleVersionVSpace      = 17;
-    int titleCopyrightVSpace    = 32;
+    int paddingLeft             = 20;
+    int paddingTop              = 400;
+    int titleVersionVSpace      = 20;
+    int titleCopyrightVSpace    = 36;
 
-    float fontFactor            = 1.0;
+    float fontFactor            = 0.8;
 
     // define text to place
     QString titleText       = tr("PEPEPOW Core");
     QString versionText     = QString(tr("Version %1")).arg(QString::fromStdString(FormatFullVersion()));
     QString copyrightTextBtc   = QChar(0xA9)+QString(" 2009-%1 ").arg(COPYRIGHT_YEAR) + QString(tr("The Bitcoin Core developers"));
     QString copyrightTextDash   = QChar(0xA9)+QString(" 2014-%1 ").arg(COPYRIGHT_YEAR) + QString(tr("The Dash Core developers"));
-    QString copyrightTextPEPEPOW   = QChar(0xA9)+QString(" 2019-%1 ").arg(COPYRIGHT_YEAR) + QString(tr("The PEPEPOW Core developers"));
+    QString copyrightTextPEPEPOW   = QChar(0xA9)+QString(" 2022-%1 ").arg(COPYRIGHT_YEAR) + QString(tr("The PEPEPOW Core developers"));
     QString titleAddText    = networkStyle->getTitleAddText();
     // networkstyle.cpp can't (yet) read themes, so we do it here to get the correct Splash-screen
     QString splashScreenPath = ":/images/" + GUIUtil::getThemeName() + "/splash";

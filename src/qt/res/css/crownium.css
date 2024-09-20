@@ -18,8 +18,6 @@ QDialog {
 }
 
 QWidget {
-    /*background-color: #2e0042;*/
-    /*background-color: rgba(75, 0, 110, 0.5);  50% transparent*/ 
     background-color: transparent;
     color: #ffffff;
 }
@@ -41,6 +39,7 @@ QLineEdit, QTextEdit, QPlainTextEdit {
 /* Restore alternating row styles */
 QTableView {
     background-color: #2e0042;
+    alternate-background-color: #3f005b;
     color: #FFFFFF;
 }
 
@@ -138,35 +137,35 @@ QMenu::item:selected {
 
 
 QCheckBox {
-    spacing: 5px;
+    padding: 5px;
 }
 QCheckBox::indicator {
     width: 16px;
     height: 16px;
 }
 QCheckBox::indicator:unchecked {
-    image:url(':/images/crownium/unchecked');
+    range:url(':/images/light/unchecked');
 }
 QCheckBox::indicator:unchecked:hover {
-    image:url(':/images/crownium/unchecked');
+    range:url(':/images/light/unchecked');
 }
 QCheckBox::indicator:unchecked:pressed {
-    image:url(':/images/crownium/checked');
+    range:url(':/images/light/checked');
 }
 QCheckBox::indicator:checked {
-    image:url(':/images/crownium/checked');
+    range:url(':/images/light/checked');
 }
 QCheckBox::indicator:checked:hover {
-    image:url(':/images/crownium/checked');
+    range:url(':/images/light/checked');
 }
 QCheckBox::indicator:checked:pressed {
-    image:url(':/images/crownium/unchecked');
+    range:url(':/images/light/unchecked');
 }
 QCheckBox::indicator:indeterminate:hover {
-    image:url(':/images/crownium/unchecked');
+    range:url(':/images/light/unchecked');
 }
 QCheckBox::indicator:indeterminate:pressed {
-    image:url(':/images/crownium/checked');
+    range:url(':/images/light/checked');
 }
 
 /* -------------------Button--------------------- */
@@ -523,7 +522,8 @@ QWidget#bgWidget {
      padding:5px;
      margin-right: 20px;
      /*background-color:transparent;*/
-     background:#2e0042;
+     /*background:#2e0042;*/
+     background:rgba(75, 0, 110, 0.5); /* 50%*/
      color: #ffffff;
  }
  QWidget#contentWidget { /* The actual content with the text/buttons/etc... */
@@ -673,7 +673,7 @@ QWidget .QFrame#framePrivateSend {
     /* PrivateSend Widget */
     /* background-color:transparent;*/
      color: #fff;
-     background-color: #660099 ;
+     /*background-color: #660099 ;*/
      max-width: 451px;
      min-width: 451px;
      max-height: 350px;
@@ -871,12 +871,12 @@ QWidget .QFrame#frame_2 QListView {
  QDialog#SendCoinsDialog .QPushButton#addButton:hover {
      background-color: #11c26d;
      border-color: #11c26d;
-     color: #ffffff 
+     color: #ffffff; 
  }
  QDialog#SendCoinsDialog .QPushButton#addButton:pressed {
      background-color: #11c26d;
      border-color: #11c26d;
-     color: #ffffff 
+     color: #ffffff; 
  }
  QDialog#SendCoinsDialog .QCheckBox#checkUsePrivateSend, QDialog#SendCoinsDialog .QCheckBox#checkUseInstantSend {
     /* PrivateSend Checkbox */    
@@ -893,7 +893,8 @@ QWidget .QFrame#frame_2 QListView {
      color: #ffffff;
  }
  QDialog#SendCoinsDialog QLabel#labelBalance {   
-     color:#11c26d;
+     /*color:#11c26d;*/
+     color:#ffffff;
      font-size:14px;  
  }
 
@@ -969,8 +970,7 @@ QDialog#CoinControlDialog .QLabel#labelCoinControlQuantityText {
  }
 
  
- QDialog#CoinControlDialog .CoinControlTreeWidget#treeWidget::item {
-    
+ QDialog#CoinControlDialog .CoinControlTreeWidget#treeWidget::item {    
      padding:3px 5px;
      background: #660099;
      border-right: 1px solid #3f3f5b;
@@ -982,8 +982,7 @@ QDialog#CoinControlDialog .QLabel#labelCoinControlQuantityText {
      color: #fff 
  }
  QDialog#CoinControlDialog .CoinControlTreeWidget#treeWidget::item:checked {
-    /* Coin Control Item (checked) */
-  
+    /* Coin Control Item (checked) */  
      background: #2e0042;  
      color: #fff 
  }
