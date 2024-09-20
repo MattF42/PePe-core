@@ -17,6 +17,10 @@ QDialog {
     color: #ffffff;
 }
 
+QWidget {
+    background-color: #2e0042;
+    color: #ffffff;
+}
 
 /* Set text color for text widgets */
 QLabel {
@@ -58,8 +62,7 @@ QTableView::item:alternate:selected {
 }
 
 .QFrame {
-    /*background-color:transparent;*/
-    background-color: rgba(75, 0, 110, 0.35); /* 50%->35% transparent*/
+    background-color: rgba(75, 0, 110, 0.5); /* 50% transparent*/
     border:0px solid #2e0042;
     color: #ffffff; /* white text */
     padding: 5px;
@@ -366,6 +369,11 @@ QTableView::item:selected {
     color: #ffffff;
 }
 
+QTableView::item:alternate:selected {
+    background-color: #0e1073;
+    color: #ffffff;
+}
+
 /* define QTreeView alternating */
 QTreeView {
     background-color: #2e0042;
@@ -383,6 +391,11 @@ QTreeView::item:alternate {
 }
 
 QTreeView::item:selected {
+    background-color: #0e1073;
+    color: #ffffff;
+}
+
+QTreeView::item:alternate:selected {
     background-color: #0e1073;
     color: #ffffff;
 }
@@ -500,15 +513,16 @@ QScrollBar {
 /*  */
 QWidget#bgWidget {
     /* The 'frame' overlaying the overview-page */
-     
-     background: rgba(9, 9, 9, 0.6);     
+    /*background: rgba(9, 9, 9, 0.6);*/
+    background:#2e0042;
  }
  QWidget#bgWidget .QPushButton#warningIcon {
      width:64px;
      height:64px;
      padding:5px;
      margin-right: 20px;
-     background-color:transparent;
+     /*background-color:transparent;*/
+     background:#2e0042;
      color: #ffffff;
  }
  QWidget#contentWidget { /* The actual content with the text/buttons/etc... */
