@@ -19,7 +19,8 @@ QDialog {
 
 QWidget {
     /*background-color: #2e0042;*/
-    background-color: rgba(75, 0, 110, 0.5); /* 50% transparent*/ 
+    /*background-color: rgba(75, 0, 110, 0.5);  50% transparent*/ 
+    background-color: transparent
     color: #ffffff;
 }
 
