@@ -20,7 +20,7 @@ QDialog {
 QWidget {
     /*background-color: #2e0042;*/
     /*background-color: rgba(75, 0, 110, 0.5);  50% transparent*/ 
-    background-color: transparent
+    background-color: transparent;
     color: #ffffff;
 }
 
@@ -41,7 +41,6 @@ QLineEdit, QTextEdit, QPlainTextEdit {
 /* Restore alternating row styles */
 QTableView {
     background-color: #2e0042;
-    alternate-background-color: #3f005b;
     color: #FFFFFF;
 }
 
@@ -674,7 +673,7 @@ QWidget .QFrame#framePrivateSend {
     /* PrivateSend Widget */
     /* background-color:transparent;*/
      color: #fff;
-     background-color: #660099
+     background-color: #660099 ;
      max-width: 451px;
      min-width: 451px;
      max-height: 350px;
