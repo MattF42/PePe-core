@@ -38,8 +38,8 @@ SplashScreen::SplashScreen(Qt::WindowFlags f, const NetworkStyle *networkStyle) 
     // set reference point, paddings
     int paddingLeft             = 25;
     int paddingTop              = 440;
-    int titleVersionVSpace      = 30;
-    int titleCopyrightVSpace    = 40;
+    int titleVersionVSpace      = 40;
+    int titleCopyrightVSpace    = 50;
 
     float fontFactor            = 1;
 
@@ -64,8 +64,8 @@ SplashScreen::SplashScreen(Qt::WindowFlags f, const NetworkStyle *networkStyle) 
 
     QPainter pixPaint(&pixmap);
     //pixPaint.setPen(QColor(100,100,100));
-    //pixPaint.setPen(QColor(255,255,255)); // white color text
-    pixPaint.setPen(QColor(0,0,0)); // black color text
+    pixPaint.setPen(QColor(255,255,255)); // white color text
+
 
     // check font size and drawing with
     pixPaint.setFont(QFont(font, 28*fontFactor));
@@ -87,8 +87,8 @@ SplashScreen::SplashScreen(Qt::WindowFlags f, const NetworkStyle *networkStyle) 
     // draw copyright stuff
     pixPaint.setFont(QFont(font, 10*fontFactor));
     pixPaint.drawText(paddingLeft,paddingTop+titleCopyrightVSpace,copyrightTextBtc);
-    pixPaint.drawText(paddingLeft,paddingTop+titleCopyrightVSpace+12,copyrightTextDash);
-    pixPaint.drawText(paddingLeft,paddingTop+titleCopyrightVSpace+24,copyrightTextPEPEPOW);
+    pixPaint.drawText(paddingLeft,paddingTop+titleCopyrightVSpace+20,copyrightTextDash);
+    pixPaint.drawText(paddingLeft,paddingTop+titleCopyrightVSpace+40,copyrightTextPEPEPOW);
 
     // draw additional text if special network
     if(!titleAddText.isEmpty()) {
@@ -206,10 +206,11 @@ void SplashScreen::showMessage(const QString &message, int alignment, const QCol
 void SplashScreen::paintEvent(QPaintEvent *event)
 {
     QPainter painter(this);
-    painter.drawPixmap(0, 0, pixmap);
+    painter.drawPixmap(0, 0, pixmap); //draw background picture
+    painter.setBrush(QBrush(QColor(75, 0, 110, 50)));  // RGBA dark purple, 50 transparent
     QRect r = rect().adjusted(5, 5, -5, -5);
-    painter.setPen(curColor);
-    painter.drawText(r, curAlignment, curMessage);
+    painter.setPen(curColor); //set font color
+    painter.drawText(r, curAlignment, curMessage); //print text
 }
 
 void SplashScreen::closeEvent(QCloseEvent *event)
