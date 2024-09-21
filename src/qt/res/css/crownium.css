@@ -1138,4 +1138,147 @@ QDialog#OptionsDialog QGroupBox::title {
     font-weight: bold;
 }
 
+/*---------Debug windows-------------*/
+/* Styles specifically for the RPCConsole dialog */
+QDialog#RPCConsole {
+    background-color: #2e0042; /* Dark purple background */
+    color: #ffffff; /* White text */
+}
+
+/* QLabel styles specifically for RPCConsole tab_info labels */
+QDialog#RPCConsole QWidget#tab_info QLabel {
+    color: #ffffff; /* White text */
+}
+
+/* QPushButton styles only for RPCConsole buttons */
+QDialog#RPCConsole QPushButton {
+    background-color: #2e0042; /* Dark purple background */
+    border: 1px solid #ffffff; /* White border */
+    color: #ffffff; /* White text */
+    padding: 5px 10px; /* Padding for buttons */
+    border-radius: 4px; /* Slightly rounded corners */
+}
+
+/* Hover state for buttons inside RPCConsole */
+QDialog#RPCConsole QPushButton:hover {
+    background-color: #660099; /* Light purple background on hover */
+    border-color: #ffffff; /* Keep the white border */
+}
+
+/* Pressed state for buttons inside RPCConsole */
+QDialog#RPCConsole QPushButton:pressed {
+    background-color: #330066; /* Darker purple background on press */
+    border-color: #ffffff; /* Keep the white border */
+}
+
+/* Console input field styling */
+QDialog#RPCConsole QLineEdit#lineEdit {
+    background-color: #2e0042; /* Dark purple background */
+    border: 1px solid #ffffff; /* White border */
+    color: #ffffff; /* White text */
+    padding: 5px; /* Padding for input fields */
+}
+
+/* Styling for the text area showing console messages */
+QDialog#RPCConsole QTextEdit#messagesWidget {
+    background-color: #2e0042; /* Dark purple background */
+    border: 1px solid #ffffff; /* White border */
+    color: #ffffff; /* White text */
+}
+
+/* Tab widget styles specifically for RPCConsole */
+QDialog#RPCConsole QTabWidget::pane {
+    background-color: #2e0042; /* Dark purple background */
+    border: 1px solid #ffffff; /* White border */
+}
+
+QDialog#RPCConsole QTabBar::tab {
+    background-color: #2e0042; /* Dark purple background for tabs */
+    color: #ffffff; /* White text */
+    padding: 10px 15px; /* Padding for tabs */
+    border: 1px solid #ffffff; /* White border for tabs */
+    border-bottom: none; /* Remove bottom border for selected tab */
+}
+
+QDialog#RPCConsole QTabBar::tab:selected {
+    background-color: #660099; /* Light purple background for selected tab */
+    font-weight: bold; /* Bold text for the selected tab */
+}
+
+/* Hover effect for tabs in RPCConsole */
+QDialog#RPCConsole QTabBar::tab:hover {
+    background-color: #4b006e; /* Darker purple on hover */
+}
+
+/* Style for group boxes inside RPCConsole */
+QDialog#RPCConsole QGroupBox {
+    background-color: #2e0042; /* Dark purple background */
+    border: 1px solid #ffffff; /* White border */
+    color: #ffffff; /* White text */
+    margin-top: 20px; /* Space at the top for the title */
+}
+
+/* GroupBox title style */
+QDialog#RPCConsole QGroupBox::title {
+    color: #ffffff; /* White text */
+    subcontrol-origin: margin; /* Position the title inside the top margin */
+    padding: 0 5px; /* Padding for the title text */
+}
+
+/* Scrollbars style specifically for RPCConsole */
+QDialog#RPCConsole QScrollBar:vertical, QDialog#RPCConsole QScrollBar:horizontal {
+    background-color: #2e0042; /* Dark purple background for scrollbars */
+    border: 1px solid #ffffff; /* White border around the scrollbar */
+    width: 8px; /* Width for vertical scrollbar */
+    height: 8px; /* Height for horizontal scrollbar */
+}
+
+QDialog#RPCConsole QScrollBar::handle {
+    background-color: #ffffff; /* White handle for scrollbar */
+}
+
+/* ToolBar buttons specifically for RPCConsole */
+QDialog#RPCConsole QToolBar > QToolButton {
+    background-color: #2e0042; /* Dark purple background */
+    color: #ffffff; /* White text */
+    border: 1px solid #ffffff; /* White border */
+    padding: 5px 8px; /* Padding for toolbar buttons */
+}
+
+/* Hover effect for ToolBar buttons inside RPCConsole */
+QDialog#RPCConsole QToolBar > QToolButton:hover {
+    background-color: #660099; /* Light purple background on hover */
+}
+
+/* Checked ToolBar button (active state) inside RPCConsole */
+QDialog#RPCConsole QToolBar > QToolButton:checked {
+    background-color: #2e0042; /* Dark purple background */
+    font-weight: bold; /* Bold text for checked button */
+}
+
+/* Specific styles for the RPCConsole font buttons */
+QDialog#RPCConsole QPushButton#fontSmallerButton, 
+QDialog#RPCConsole QPushButton#fontBiggerButton, 
+QDialog#RPCConsole QPushButton#clearButton {
+    background-color: transparent; /* Transparent background */
+    border: 1px solid #ffffff; /* White border */
+    color: #ffffff; /* White text */
+}
+
+/* Specific style for the Network In/Out lines in RPCConsole */
+QDialog#RPCConsole .QGroupBox #line {
+    background-color: #00ff00; /* Green line for Network In */
+}
+
+QDialog#RPCConsole .QGroupBox #line_2 {
+    background-color: #ff3300; /* Red line for Network Out */
+}
+
+/* Specific styling for the debug log button inside RPCConsole */
+QDialog#RPCConsole QPushButton#openDebugLogfileButton {
+    max-width: 60px;
+    background-color: #2e0042; /* Dark purple background */
+    border: 1px solid #ffffff; /* White border */
+    color: #ffffff; /* White text */
+}
 
