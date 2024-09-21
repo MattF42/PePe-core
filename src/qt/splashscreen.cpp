@@ -86,9 +86,9 @@ SplashScreen::SplashScreen(Qt::WindowFlags f, const NetworkStyle *networkStyle) 
 
     // draw copyright stuff
     pixPaint.setFont(QFont(font, 10*fontFactor));
-    pixPaint.drawText(paddingLeft,paddingTop+titleCopyrightVSpace+20,copyrightTextBtc);
-    pixPaint.drawText(paddingLeft,paddingTop+titleCopyrightVSpace+20,copyrightTextDash);
-    pixPaint.drawText(paddingLeft,paddingTop+titleCopyrightVSpace+40,copyrightTextPEPEPOW);
+    pixPaint.drawText(paddingLeft,paddingTop+titleCopyrightVSpace+15,copyrightTextBtc);
+    pixPaint.drawText(paddingLeft,paddingTop+titleCopyrightVSpace+15,copyrightTextDash);
+    pixPaint.drawText(paddingLeft,paddingTop+titleCopyrightVSpace+35,copyrightTextPEPEPOW);
 
     // draw additional text if special network
     if(!titleAddText.isEmpty()) {
@@ -207,10 +207,11 @@ void SplashScreen::paintEvent(QPaintEvent *event)
 {
     QPainter painter(this);
     painter.drawPixmap(0, 0, pixmap); //draw background picture
-    painter.setBrush(QBrush(QColor(75, 0, 110, 50)));  // RGBA dark purple, 50 transparent
-    QRect r = rect().adjusted(5, 5, -5, -5);
-    painter.setPen(curColor); //set font color
-    painter.drawText(r, curAlignment, curMessage); //print text
+    painter.setBrush(QBrush(QColor(70, 0, 110, 50)));  // RGBA dark purple, 50 transparent
+    QRect textBackgroundRect = rect().adjusted(5, 5, -5, -5);
+    painter.drawRect(textBackgroundRect);  // draw rect
+    painter.setPen(curColor); //font color
+    painter.drawText(textBackgroundRect, curAlignment, curMessage); // print text
 }
 
 void SplashScreen::closeEvent(QCloseEvent *event)
