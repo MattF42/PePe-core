@@ -17,7 +17,7 @@
 }
 
 WalletFrame {
-border-image: url(':/images/light/drkblue_walletFrame_bg') 0 0 0 0 stretch stretch;
+border-image: url(':/images/trad/drkblue_walletFrame_bg') 0 0 0 0 stretch stretch;
 border-top:0px solid #000;
 margin:0;
 padding:0;
@@ -451,7 +451,7 @@ QWidget#bgWidget {
      background-color:transparent;
  }
  QWidget#contentWidget { /* The actual content with the text/buttons/etc... */
-border-image: url(':/images/light/drkblue_walletFrame_bg') 0 0 0 0 stretch stretch;
+border-image: url(':/images/trad/drkblue_walletFrame_bg') 0 0 0 0 stretch stretch;
 border-top:0px solid #000;
 margin:0;
 padding-top:20px;
