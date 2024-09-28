@@ -97,7 +97,7 @@ OptionsDialog::OptionsDialog(QWidget *parent, bool enableWallet) :
     ui->theme->addItem(QString("PEPEW-blue"), QVariant("drkblue"));
     ui->theme->addItem(QString("PEPEW-Crownium"), QVariant("crownium"));
     ui->theme->addItem(QString("PEPEW-traditional"), QVariant("trad"));
-    ui->theme->addItem(QString("mosaicco"), QVariant("mosaicco"));
+    ui->theme->addItem(QString("3d mosaicco"), QVariant("mosaicco"));
     
     /* Language selector */
     QDir translations(":translations");
