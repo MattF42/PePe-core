@@ -228,7 +228,7 @@
         <file alias="transaction_abandoned">res/icons/trad/transaction_abandoned.png</file>
         <file alias="network_disabled">res/icons/trad/network_disabled.png</file>
     </qresource>
-        <qresource prefix="/icons/mosaicco">
+    <qresource prefix="/icons/mosaicco">
         <file alias="address-book">res/icons/mosaicco/address-book.png</file>
         <file alias="quit">res/icons/mosaicco/quit.png</file>
         <file alias="send">res/icons/mosaicco/send.png</file>
@@ -350,7 +350,7 @@
         <file alias="splash">res/images/trad/splash.png</file>
         <file alias="splash_testnet">res/images/trad/splash_testnet.png</file>
     </qresource>
-        <qresource prefix="/images/mosaicco">
+    <qresource prefix="/images/mosaicco">
         <file alias="about">res/images/mosaicco/about.png</file>
         <file alias="dash_logo_horizontal">res/images/mosaicco/dash_logo_horizontal.png</file>
         <file alias="unchecked">res/images/mosaicco/unchecked.png</file>
