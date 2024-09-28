@@ -555,7 +555,7 @@ RES_IMAGES = \
   qt/res/images/trad/drkblue_leftArrow_small.png \
   qt/res/images/trad/drkblue_rightArrow_small.png \
   qt/res/images/trad/drkblue_qtreeview_selected.png \
-  qt/res/images/trad/drkblue_walletFrame_bg.png
+  qt/res/images/trad/drkblue_walletFrame_bg.png \
   qt/res/images/mosaicco/about.png \
   qt/res/images/mosaicco/splash.png \
   qt/res/images/mosaicco/splash_testnet.png \
@@ -568,7 +568,7 @@ RES_IMAGES = \
   qt/res/images/mosaicco/drkblue_leftArrow_small.png \
   qt/res/images/mosaicco/drkblue_rightArrow_small.png \
   qt/res/images/mosaicco/drkblue_qtreeview_selected.png \
-  qt/res/images/mosaicco/drkblue_walletFrame_bg.png 
+  qt/res/images/mosaicco/drkblue_walletFrame_bg.png
 
 RES_CSS = \
   qt/res/css/drkblue.css \
