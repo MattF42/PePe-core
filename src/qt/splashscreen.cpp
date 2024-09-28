@@ -207,8 +207,8 @@ void SplashScreen::paintEvent(QPaintEvent *event)
 {
     QPainter painter(this);
     painter.drawPixmap(0, 0, pixmap); //draw background picture
-    painter.setBrush(QBrush(QColor(70, 0, 110, 50)));  // RGBA dark purple, 50 transparent
-    QRect textBackgroundRect = rect().adjusted(5, 5, -5, -5);
+    painter.setBrush(QBrush(QColor(70, 0, 110, 60)));  // RGBA dark purple, 60 transparent
+    QRect textBackgroundRect = rect().adjusted(0, 0, 0, 0);
     painter.drawRect(textBackgroundRect);  // draw rect
     painter.setPen(curColor); //font color
     painter.drawText(textBackgroundRect, curAlignment, curMessage); // print text
