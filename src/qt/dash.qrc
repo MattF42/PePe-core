@@ -269,10 +269,10 @@
         <file alias="key">res/icons/mosaicco/key.png</file>
         <file alias="filesave">res/icons/mosaicco/filesave.png</file>
         <file alias="debugwindow">res/icons/mosaicco/debugwindow.png</file>
-        <file alias="drkblue_editpaste">res/icons/mosaicco/mosaicco_editpaste.png</file>
-        <file alias="drkblue_address-book">res/icons/mosaicco/mosaicco_address-book.png</file>
-        <file alias="drkblue_editcopy">res/icons/mosaicco/mosaicco_editcopy.png</file>
-        <file alias="drkblue_remove">res/icons/mosaicco/mosaicco_remove.png</file>
+        <file alias="drkblue_editpaste">res/icons/mosaicco/drkblue_editpaste.png</file>
+        <file alias="drkblue_address-book">res/icons/mosaicco/drkblue_address-book.png</file>
+        <file alias="drkblue_editcopy">res/icons/mosaicco/drkblue_editcopy.png</file>
+        <file alias="drkblue_remove">res/icons/mosaicco/drkblue_remove.png</file>
         <file alias="browse">res/icons/mosaicco/browse.png</file>
         <file alias="about">res/icons/mosaicco/about.png</file>
         <file alias="about_qt">res/icons/mosaicco/about_qt.png</file>
@@ -355,7 +355,7 @@
         <file alias="dash_logo_horizontal">res/images/mosaicco/dash_logo_horizontal.png</file>
         <file alias="unchecked">res/images/mosaicco/unchecked.png</file>
         <file alias="checked">res/images/mosaicco/checked.png</file>
-        <file alias="drkblue_downArrow">res/images/mosaicco/mosaicco_downArrow.png</file>
+        <file alias="drkblue_downArrow">res/images/mosaicco/drkblue_downArrow.png</file>
         <file alias="drkblue_downArrow_small">res/images/mosaicco/drkblue_downArrow_small.png</file>
         <file alias="drkblue_upArrow_small">res/images/mosaicco/drkblue_upArrow_small.png</file>
         <file alias="drkblue_leftArrow_small">res/images/mosaicco/drkblue_leftArrow_small.png</file>
