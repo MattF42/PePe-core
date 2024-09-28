@@ -92,12 +92,17 @@ OptionsDialog::OptionsDialog(QWidget *parent, bool enableWallet) :
     }
     
     /* Theme selector */
-    ui->theme->addItem(QString("PEPEW-light"), QVariant("light"));
+/*    ui->theme->addItem(QString("PEPEW-light"), QVariant("light"));
     ui->theme->addItem(QString("PEPEW-light-hires"), QVariant("light-hires"));
     ui->theme->addItem(QString("PEPEW-blue"), QVariant("drkblue"));
     ui->theme->addItem(QString("PEPEW-Crownium"), QVariant("crownium"));
-    ui->theme->addItem(QString("PEPEW-traditional"), QVariant("trad"));
-    ui->theme->addItem(QString("3d mosaicco"), QVariant("mosaicco"));
+    ui->theme->addItem(QString("PEPEW-traditional"), QVariant("trad"));    */
+    ui->theme->addItem(QString("PEPEW-Homelife"), QVariant("light"));
+    ui->theme->addItem(QString("PEPEW-Starglow"), QVariant("drkblue"));
+    ui->theme->addItem(QString("PEPEW-Lionheron"), QVariant("crownium"));
+    ui->theme->addItem(QString("PEPEW-3D-Mosaicco"), QVariant("mosaicco"));
+    ui->theme->addItem(QString("PEPEW-Traditional"), QVariant("trad"));
+
     
     /* Language selector */
     QDir translations(":translations");

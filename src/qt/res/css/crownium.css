@@ -1138,7 +1138,7 @@ QDialog#OptionsDialog QGroupBox::title {
     font-weight: bold;
 }
 
-/*---------Debug windows(RPCConsole)-------------*/
+/*---------Debug windows(RPCConsole)------CSS Not working*/
 /* Styles specifically for the RPCConsole widget */
 QWidget#RPCConsole {
     background-color: #2e0042; /* Dark purple background */
