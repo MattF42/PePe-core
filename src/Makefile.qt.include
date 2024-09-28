@@ -387,7 +387,7 @@ RES_ICONS = \
   qt/res/icons/trad/fontbigger.png \
   qt/res/icons/trad/fontsmaller.png \
   qt/res/icons/trad/transaction_abandoned.png \
-  qt/res/icons/trad/network_disabled.png
+  qt/res/icons/trad/network_disabled.png \
   qt/res/icons/mosaicco/add.png \
   qt/res/icons/mosaicco/address-book.png \
   qt/res/icons/mosaicco/browse.png \
@@ -441,8 +441,7 @@ RES_ICONS = \
   qt/res/icons/mosaicco/fontbigger.png \
   qt/res/icons/mosaicco/fontsmaller.png \
   qt/res/icons/mosaicco/transaction_abandoned.png \
-  qt/res/icons/mosaicco/network_disabled.png 
-
+  qt/res/icons/mosaicco/network_disabled.png
 
 BITCOIN_QT_CPP = \
   qt/bantablemodel.cpp \
