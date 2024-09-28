@@ -356,12 +356,12 @@
         <file alias="unchecked">res/images/mosaicco/unchecked.png</file>
         <file alias="checked">res/images/mosaicco/checked.png</file>
         <file alias="drkblue_downArrow">res/images/mosaicco/mosaicco_downArrow.png</file>
-        <file alias="drkblue_downArrow_small">res/images/mosaicco/mosaicco_downArrow_small.png</file>
-        <file alias="drkblue_upArrow_small">res/images/mosaicco/mosaicco_upArrow_small.png</file>
-        <file alias="drkblue_leftArrow_small">res/images/mosaicco/mosaicco_leftArrow_small.png</file>
-        <file alias="drkblue_rightArrow_small">res/images/mosaicco/mosaicco_rightArrow_small.png</file>
-        <file alias="drkblue_qtreeview_selected">res/images/mosaicco/mosaicco_qtreeview_selected.png</file>
-        <file alias="drkblue_walletFrame_bg">res/images/mosaicco/mosaicco_walletFrame_bg.png</file>
+        <file alias="drkblue_downArrow_small">res/images/mosaicco/drkblue_downArrow_small.png</file>
+        <file alias="drkblue_upArrow_small">res/images/mosaicco/drkblue_upArrow_small.png</file>
+        <file alias="drkblue_leftArrow_small">res/images/mosaicco/drkblue_leftArrow_small.png</file>
+        <file alias="drkblue_rightArrow_small">res/images/mosaicco/drkblue_rightArrow_small.png</file>
+        <file alias="drkblue_qtreeview_selected">res/images/mosaicco/drkblue_qtreeview_selected.png</file>
+        <file alias="drkblue_walletFrame_bg">res/images/mosaicco/drkblue_walletFrame_bg.png</file>
         <file alias="splash">res/images/mosaicco/splash.png</file>
         <file alias="splash_testnet">res/images/mosaicco/splash_testnet.png</file>
     </qresource>
