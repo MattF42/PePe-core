@@ -56,8 +56,6 @@ public:
     explicit BitcoinGUI(const PlatformStyle *platformStyle, const NetworkStyle *networkStyle, QWidget *parent = 0);
     ~BitcoinGUI();
 
-    /*Claim paintEvent*/
-    void paintEvent(QPaintEvent *event) override;
 
     /** Set the client model.
         The client model represents the part of the core that communicates with the P2P network, and is wallet-agnostic.

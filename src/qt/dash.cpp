@@ -54,8 +54,6 @@
 #include <QTimer>
 #include <QTranslator>
 #include <QSslConfiguration>
-#include <QPainter>
-#include <QPaintEvent>
 
 #if defined(QT_STATICPLUGIN)
 #include <QtPlugin>
@@ -397,25 +395,6 @@ void BitcoinApplication::createOptionsModel(bool resetSettings)
     optionsModel = new OptionsModel(NULL, resetSettings);
 }
 
-void BitcoinGUI::paintEvent(QPaintEvent *event)
-{
-    QPainter painter(this);
-
-    // networkstyle.cpp can't (yet) read themes, so we do it here to get the correct background
-    QString backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/splash";
-    if (GetBoolArg("-regtest", false))
-        backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/splash_testnet";
-    if (GetBoolArg("-testnet", false))
-        backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/splash_testnet";
-
-// Draw background
-    QPixmap background(backgroundPath);
-    painter.drawPixmap(0, 0, this->width(), this->height(), background);
-
-    //Retaining the original functionality
-    QMainWindow::paintEvent(event);
-}
-
 void BitcoinApplication::createWindow(const NetworkStyle *networkStyle)
 {
     window = new BitcoinGUI(platformStyle, networkStyle, 0);
@@ -427,10 +406,8 @@ void BitcoinApplication::createWindow(const NetworkStyle *networkStyle)
     if (GetBoolArg("-testnet", false))
         backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/splash_testnet";
 
-    //Apply background
-    QPalette palette;
-    palette.setBrush(QPalette::Background, QBrush(QPixmap(backgroundPath)));
-    window->setPalette(palette);
+    // Apply background using setStyleSheet
+    window->setStyleSheet("QMainWindow { background-image: url(" + backgroundPath + "); background-repeat: no-repeat; background-position: center; }");
 
     pollShutdownTimer = new QTimer(window);
     connect(pollShutdownTimer, SIGNAL(timeout()), window, SLOT(detectShutdown()));
