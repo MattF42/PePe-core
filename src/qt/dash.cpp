@@ -409,7 +409,7 @@ void BitcoinGUI::paintEvent(QPaintEvent *event)
         backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/splash_testnet";
 
     
-    QString backgroundPath = ":/images/light/drkblue_walletFrame_bg.png";
+    QString backgroundPath = ":/images/light/drkblue_walletFrame_bg";
 
 // Draw background
     QPixmap background(backgroundPath);
