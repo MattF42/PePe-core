@@ -408,9 +408,6 @@ void BitcoinGUI::paintEvent(QPaintEvent *event)
     if (GetBoolArg("-testnet", false))
         backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/splash_testnet";
 
-    
-    QString backgroundPath = ":/images/light/drkblue_walletFrame_bg";
-
 // Draw background
     QPixmap background(backgroundPath);
     painter.drawPixmap(0, 0, this->width(), this->height(), background);
@@ -424,11 +421,11 @@ void BitcoinApplication::createWindow(const NetworkStyle *networkStyle)
     window = new BitcoinGUI(platformStyle, networkStyle, 0);
 
     // Initialize the window background color or background image
-    QString backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/background";
+    QString backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/splash";
     if (GetBoolArg("-regtest", false))
-        backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/background_testnet";
+        backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/splash_testnet";
     if (GetBoolArg("-testnet", false))
-        backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/background_testnet";
+        backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/splash_testnet";
 
     //Apply background
     QPalette palette;
