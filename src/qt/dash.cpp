@@ -399,14 +399,19 @@ void BitcoinGUI::paintEvent(QPaintEvent *event)
 {
     QPainter painter(this);
 
-    // Use a background image"
-    QPixmap background(":/images/crownium/drkblue_walletFrame_bg");
+    // networkstyle.cpp can't (yet) read themes, so we do it here to get the correct background
+    QString backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/background";
+    if (GetBoolArg("-regtest", false))
+        backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/background_testnet";
+    if (GetBoolArg("-testnet", false))
+        backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/background_testnet";
 
-    // Draw the background image, automatically scaling it based on the window size
+    // Draw background
+    QPixmap background(backgroundPath);
     painter.drawPixmap(0, 0, this->width(), this->height(), background);
 
-    // Draw other elements, retaining the original functionality
-    QMainWindow::paintEvent(event);  // Call the original paint event to preserve the existing functionality
+    //Retaining the original functionality
+    QMainWindow::paintEvent(event);
 }
 
 void BitcoinApplication::createWindow(const NetworkStyle *networkStyle)
@@ -414,9 +419,15 @@ void BitcoinApplication::createWindow(const NetworkStyle *networkStyle)
     window = new BitcoinGUI(platformStyle, networkStyle, 0);
 
     // Initialize the window background color or background image
-    window->setAutoFillBackground(true);
+    QString backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/background";
+    if (GetBoolArg("-regtest", false))
+        backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/background_testnet";
+    if (GetBoolArg("-testnet", false))
+        backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/background_testnet";
+
+    //Apply background
     QPalette palette;
-    palette.setBrush(QPalette::Background, QBrush(QPixmap(":/images/crownium/drkblue_walletFrame_bg")));
+    palette.setBrush(QPalette::Background, QBrush(QPixmap(backgroundPath)));
     window->setPalette(palette);
 
     pollShutdownTimer = new QTimer(window);
