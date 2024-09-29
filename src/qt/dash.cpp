@@ -399,13 +399,6 @@ void BitcoinApplication::createWindow(const NetworkStyle *networkStyle)
 {
     window = new BitcoinGUI(platformStyle, networkStyle, 0);
 
-    // Initialize the window background color or background image
-    QString backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/splash";
-    if (GetBoolArg("-regtest", false))
-        backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/splash_testnet";
-    if (GetBoolArg("-testnet", false))
-        backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/splash_testnet";
- 
     pollShutdownTimer = new QTimer(window);
     connect(pollShutdownTimer, SIGNAL(timeout()), window, SLOT(detectShutdown()));
     pollShutdownTimer->start(200);
