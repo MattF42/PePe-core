@@ -402,11 +402,11 @@ void BitcoinGUI::paintEvent(QPaintEvent *event)
     QPainter painter(this);
 
     // networkstyle.cpp can't (yet) read themes, so we do it here to get the correct background
-    QString backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/background";
+    QString backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/splash";
     if (GetBoolArg("-regtest", false))
-        backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/background_testnet";
+        backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/splash_testnet";
     if (GetBoolArg("-testnet", false))
-        backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/background_testnet";
+        backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/splash_testnet";
 
     // Draw background
     QPixmap background(backgroundPath);

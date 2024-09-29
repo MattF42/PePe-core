@@ -206,6 +206,7 @@ void SplashScreen::showMessage(const QString &message, int alignment, const QCol
 void SplashScreen::paintEvent(QPaintEvent *event)
 {
     QPainter painter(this);
+    painter.setPen(QColor(255, 255, 255)); // White frame
     painter.drawPixmap(0, 0, pixmap); //draw background picture
     painter.setBrush(QBrush(QColor(70, 0, 110, 60)));  // RGBA dark purple, 60 transparent
     QRect textBackgroundRect = rect().adjusted(15, 15, -15, -15);
