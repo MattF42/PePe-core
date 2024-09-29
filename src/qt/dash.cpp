@@ -399,8 +399,8 @@ void BitcoinGUI::paintEvent(QPaintEvent *event)
 {
     QPainter painter(this);
 
-    // Use a background image, assuming the background image path is ":/images/background_image.png"
-    QPixmap background(":/images/background_image.png");
+    // Use a background image"
+    QPixmap background(":/images/crownium/drkblue_walletFrame_bg");
 
     // Draw the background image, automatically scaling it based on the window size
     painter.drawPixmap(0, 0, this->width(), this->height(), background);
