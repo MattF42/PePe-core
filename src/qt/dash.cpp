@@ -408,7 +408,10 @@ void BitcoinGUI::paintEvent(QPaintEvent *event)
     if (GetBoolArg("-testnet", false))
         backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/splash_testnet";
 
-    // Draw background
+    
+    QString backgroundPath = ":/images/light/drkblue_walletFrame_bg.png";
+
+// Draw background
     QPixmap background(backgroundPath);
     painter.drawPixmap(0, 0, this->width(), this->height(), background);
 
