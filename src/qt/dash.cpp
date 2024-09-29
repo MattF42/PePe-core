@@ -395,9 +395,29 @@ void BitcoinApplication::createOptionsModel(bool resetSettings)
     optionsModel = new OptionsModel(NULL, resetSettings);
 }
 
+void BitcoinGUI::paintEvent(QPaintEvent *event)
+{
+    QPainter painter(this);
+
+    // Use a background image, assuming the background image path is ":/images/background_image.png"
+    QPixmap background(":/images/background_image.png");
+
+    // Draw the background image, automatically scaling it based on the window size
+    painter.drawPixmap(0, 0, this->width(), this->height(), background);
+
+    // Draw other elements, retaining the original functionality
+    QMainWindow::paintEvent(event);  // Call the original paint event to preserve the existing functionality
+}
+
 void BitcoinApplication::createWindow(const NetworkStyle *networkStyle)
 {
     window = new BitcoinGUI(platformStyle, networkStyle, 0);
+
+    // Initialize the window background color or background image
+    window->setAutoFillBackground(true);
+    QPalette palette;
+    palette.setBrush(QPalette::Background, QBrush(QPixmap(":/images/crownium/drkblue_walletFrame_bg")));
+    window->setPalette(palette);
 
     pollShutdownTimer = new QTimer(window);
     connect(pollShutdownTimer, SIGNAL(timeout()), window, SLOT(detectShutdown()));
