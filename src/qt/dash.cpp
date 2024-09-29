@@ -54,6 +54,7 @@
 #include <QTimer>
 #include <QTranslator>
 #include <QSslConfiguration>
+#include <QPaintEvent>
 
 #if defined(QT_STATICPLUGIN)
 #include <QtPlugin>
