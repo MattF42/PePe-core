@@ -405,10 +405,7 @@ void BitcoinApplication::createWindow(const NetworkStyle *networkStyle)
         backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/splash_testnet";
     if (GetBoolArg("-testnet", false))
         backgroundPath = ":/images/" + GUIUtil::getThemeName() + "/splash_testnet";
-
-    // Apply background using setStyleSheet
-    window->setStyleSheet("QMainWindow { background-image: url(" + backgroundPath + "); background-repeat: no-repeat; background-position: center; }");
-
+ 
     pollShutdownTimer = new QTimer(window);
     connect(pollShutdownTimer, SIGNAL(timeout()), window, SLOT(detectShutdown()));
     pollShutdownTimer->start(200);
