@@ -1138,148 +1138,71 @@ QDialog#OptionsDialog QGroupBox::title {
     font-weight: bold;
 }
 
-/*---------Debug windows(RPCConsole)------CSS Not working*/
-/* Styles specifically for the RPCConsole widget */
-QWidget#RPCConsole {
-    background-color: #2e0042; /* Dark purple background */
-    color: #ffffff; /* White text */
-}
+/* -------------------Toolbox--------------------- */
 
-/* QLabel styles specifically for RPCConsole tab_info labels */
-QWidget#RPCConsole QWidget#tab_info QLabel {
-    color: #ffffff; /* White text */
-}
-
-/* QPushButton styles only for RPCConsole buttons */
-QWidget#RPCConsole QPushButton {
-    background-color: #2e0042; /* Dark purple background */
-    border: 1px solid #ffffff; /* White border */
-    color: #ffffff; /* White text */
-    padding: 5px 10px; /* Padding for buttons */
-    border-radius: 4px; /* Slightly rounded corners */
-}
-
-/* Hover state for buttons inside RPCConsole */
-QWidget#RPCConsole QPushButton:hover {
-    background-color: #660099; /* Light purple background on hover */
-    border-color: #ffffff; /* Keep the white border */
-}
-
-/* Pressed state for buttons inside RPCConsole */
-QWidget#RPCConsole QPushButton:pressed {
-    background-color: #330066; /* Darker purple background on press */
-    border-color: #ffffff; /* Keep the white border */
-}
-
-/* Console input field styling */
-QWidget#RPCConsole QLineEdit#lineEdit {
-    background-color: #2e0042; /* Dark purple background */
-    border: 1px solid #ffffff; /* White border */
-    color: #ffffff; /* White text */
-    padding: 5px; /* Padding for input fields */
-}
-
-/* Styling for the text area showing console messages */
-QWidget#RPCConsole QTextEdit#messagesWidget {
-    background-color: #2e0042; /* Dark purple background */
-    border: 1px solid #ffffff; /* White border */
-    color: #ffffff; /* White text */
-}
-
-/* Tab widget styles specifically for RPCConsole */
-QWidget#RPCConsole QTabWidget::pane {
-    background-color: #2e0042; /* Dark purple background */
-    border: 1px solid #ffffff; /* White border */
-}
-
-QWidget#RPCConsole QTabBar::tab {
-    background-color: #2e0042; /* Dark purple background for tabs */
-    color: #ffffff; /* White text */
-    padding: 10px 15px; /* Padding for tabs */
-    border: 1px solid #ffffff; /* White border for tabs */
-    border-bottom: none; /* Remove bottom border for selected tab */
-}
-
-QWidget#RPCConsole QTabBar::tab:selected {
-    background-color: #660099; /* Light purple background for selected tab */
-    font-weight: bold; /* Bold text for the selected tab */
-}
-
-/* Hover effect for tabs in RPCConsole */
-QWidget#RPCConsole QTabBar::tab:hover {
-    background-color: #4b006e; /* Darker purple on hover */
-}
-
-/* Style for group boxes inside RPCConsole */
-QWidget#RPCConsole QGroupBox {
-    background-color: #2e0042; /* Dark purple background */
-    border: 1px solid #ffffff; /* White border */
-    color: #ffffff; /* White text */
-    margin-top: 20px; /* Space at the top for the title */
-}
-
-/* GroupBox title style */
-QWidget#RPCConsole QGroupBox::title {
-    color: #ffffff; /* White text */
-    subcontrol-origin: margin; /* Position the title inside the top margin */
-    padding: 0 5px; /* Padding for the title text */
-}
-
-/* Scrollbars style specifically for RPCConsole */
-QWidget#RPCConsole QScrollBar:vertical, QWidget#RPCConsole QScrollBar:horizontal {
-    background-color: #2e0042; /* Dark purple background for scrollbars */
-    border: 1px solid #ffffff; /* White border around the scrollbar */
-    width: 8px; /* Width for vertical scrollbar */
-    height: 8px; /* Height for horizontal scrollbar */
-}
-
-QWidget#RPCConsole QScrollBar::handle {
-    background-color: #ffffff; /* White handle for scrollbar */
-}
-
-/* ToolBar buttons specifically for RPCConsole */
-QWidget#RPCConsole QToolBar > QToolButton {
-    background-color: #2e0042; /* Dark purple background */
-    color: #ffffff; /* White text */
-    border: 1px solid #ffffff; /* White border */
-    padding: 5px 8px; /* Padding for toolbar buttons */
-}
-
-/* Hover effect for ToolBar buttons inside RPCConsole */
-QWidget#RPCConsole QToolBar > QToolButton:hover {
-    background-color: #660099; /* Light purple background on hover */
-}
-
-/* Checked ToolBar button (active state) inside RPCConsole */
-QWidget#RPCConsole QToolBar > QToolButton:checked {
-    background-color: #2e0042; /* Dark purple background */
-    font-weight: bold; /* Bold text for checked button */
-}
-
-/* Specific styles for the RPCConsole font buttons */
-QWidget#RPCConsole QPushButton#fontSmallerButton, 
-QWidget#RPCConsole QPushButton#fontBiggerButton, 
-QWidget#RPCConsole QPushButton#clearButton {
-    background-color: transparent; /* Transparent background */
-    border: 1px solid #ffffff; /* White border */
-    color: #ffffff; /* White text */
-}
-
-/* Specific style for the Network In/Out lines in RPCConsole */
-QWidget#RPCConsole .QGroupBox #line {
-    background-color: #00ff00; /* Green line for Network In */
-}
-
-QWidget#RPCConsole .QGroupBox #line_2 {
-    background-color: #ff3300; /* Red line for Network Out */
-}
-
-/* Specific styling for the debug log button inside RPCConsole */
-QWidget#RPCConsole QPushButton#openDebugLogfileButton {
-    max-width: 60px;
-    background-color: #2e0042; /* Dark purple background */
-    border: 1px solid #ffffff; /* White border */
-    color: #ffffff; /* White text */
-}
-
-
+QDialog#RPCConsole QWidget#tab_info QLabel#label_11, QDialog#RPCConsole QWidget#tab_info QLabel#label_10 {
+    /* Margin between Network and Block Chain headers */
+     qproperty-alignment: 'AlignBottom';
+     min-height:25px;
+     min-width:180px;
+ }
+ QDialog#RPCConsole QWidget#tab_peers QLabel#peerHeading {
+    /* Peers Info Header */
+     color:#2e0042;
+ }
+ QDialog#RPCConsole QPushButton#openDebugLogfileButton {
+     max-width:60px;
+ }
+ QDialog#RPCConsole QTextEdit#messagesWidget {
+    /* Console Messages Window */
+     border:0;
+ }
+ QDialog#RPCConsole QLineEdit#lineEdit {
+    /* Console Input */
+     margin-right:5px;
+ }
+ QDialog#RPCConsole QPushButton#clearButton {
+    /* Console Clear Button */
+     background-color:transparent;
+     padding-left:10px;
+     padding-right:10px;
+ }
+ QDialog#RPCConsole .QGroupBox #line {
+    /* Network In Line */
+     background-color:#00ff00;
+ }
+ QDialog#RPCConsole .QGroupBox #line_2 {
+    /* Network Out Line */
+     background:#ff3300;
+ }
+ 
+ #RPCConsole #fontSmallerButton, #RPCConsole #fontBiggerButton,#RPCConsole #clearButton{
+     border-color: #3f3f5b;
+     padding: 3px;
+ }
+ #RPCConsole #promptIcon{
+     border: 0;
+ }
+ 
+ /* HELP MENU */
+ 
+ 
+ /* About GeekCash Dialog */
+ 
+ QDialog#AboutDialog QLabel#label, QDialog#AboutDialog QLabel#copyrightLabel, QDialog#AboutDialog QLabel#label_2 {
+    /* About GeekCash Contents */
+     margin-left:10px;
+ }
+ QDialog#AboutDialog QLabel#label_2 {
+    /* Margin for About GeekCash text */
+     margin-right:10px;
+ }
+ /* Edit Address Dialog */
+ 
+ QDialog#EditAddressDialog QLabel {
+     qproperty-alignment: 'AlignVCenter | AlignRight';
+     min-height:27px;
+     font-weight:normal;
+     padding-right:5px;
+ }
+ 
