@@ -33,7 +33,7 @@ void CSporkManager::ProcessSpork(CNode* pfrom, std::string& strCommand, CDataStr
             LOCK(cs_main);
             pfrom->setAskFor.erase(hash);
             if(!chainActive.Tip()) return;
-            if (spork.nSporkID == SPORK_21_FREEZE_BLACKLIST && !spork.strPayload.empty()) {
+            if (IsStringPayloadSpork(spork.nSporkID) && !spork.strPayload.empty()) {
                 strLogMsg = strprintf("SPORK -- hash: %s id: %d payload: %s bestHeight: %d peer=%d", hash.ToString(), spork.nSporkID, spork.strPayload, chainActive.Height(), pfrom->id);
             } else {
                 strLogMsg = strprintf("SPORK -- hash: %s id: %d value: %10d bestHeight: %d peer=%d", hash.ToString(), spork.nSporkID, spork.nValue, chainActive.Height(), pfrom->id);
@@ -249,6 +249,13 @@ std::string CSporkManager::GetSporkNameByID(int nSporkID)
     }
 }
 
+bool CSporkManager::IsStringPayloadSpork(int nSporkID) const
+{
+    // Currently only SPORK_21_FREEZE_BLACKLIST supports string payloads
+    // This function can be extended to support additional string payload sporks in the future
+    return nSporkID == SPORK_21_FREEZE_BLACKLIST;
+}
+
 bool CSporkManager::SetPrivKey(std::string strPrivKey)
 {
     CSporkMessage spork;
@@ -273,7 +280,7 @@ bool CSporkMessage::Sign(std::string strSignKey)
     std::string strMessage = boost::lexical_cast<std::string>(nSporkID) + boost::lexical_cast<std::string>(nValue) + boost::lexical_cast<std::string>(nTimeSigned);
     
     // Only include string payload in signature for sporks that support it
-    if (nSporkID == SPORK_21_FREEZE_BLACKLIST) {
+    if (IsStringPayloadSpork(nSporkID)) {
         strMessage += strPayload;
     }
 
@@ -302,7 +309,7 @@ bool CSporkMessage::CheckSignature()
     std::string strMessage = boost::lexical_cast<std::string>(nSporkID) + boost::lexical_cast<std::string>(nValue) + boost::lexical_cast<std::string>(nTimeSigned);
     
     // Only include string payload in signature verification for sporks that support it
-    if (nSporkID == SPORK_21_FREEZE_BLACKLIST) {
+    if (IsStringPayloadSpork(nSporkID)) {
         strMessage += strPayload;
     }
     

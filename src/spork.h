@@ -57,6 +57,11 @@ extern CSporkManager sporkManager;
 // Keep track of all of the network spork settings
 //
 
+// Helper function to determine if a spork supports string payloads
+inline bool IsStringPayloadSpork(int nSporkID) {
+    return nSporkID == SPORK_21_FREEZE_BLACKLIST;
+}
+
 class CSporkMessage
 {
 private:
@@ -101,7 +106,7 @@ public:
         
         // Only serialize string payload for specific sporks that support it
         // This ensures backward compatibility for other sporks
-        if (nSporkID == SPORK_21_FREEZE_BLACKLIST) {
+        if (IsStringPayloadSpork(nSporkID)) {
             READWRITE(strPayload);
         } else if (ser_action.ForRead()) {
             // For reading, ensure strPayload is empty for non-string sporks
@@ -116,7 +121,7 @@ public:
         ss << nValue;
         ss << nTimeSigned;
         // Only include string payload in hash for sporks that support it
-        if (nSporkID == SPORK_21_FREEZE_BLACKLIST) {
+        if (IsStringPayloadSpork(nSporkID)) {
             ss << strPayload;
         }
         return ss.GetHash();
@@ -151,6 +156,9 @@ public:
     std::string GetSporkNameByID(int nSporkID);
 
     bool SetPrivKey(std::string strPrivKey);
+
+private:
+    bool IsStringPayloadSpork(int nSporkID) const;
 };
 
 #endif
