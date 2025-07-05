@@ -33,7 +33,11 @@ void CSporkManager::ProcessSpork(CNode* pfrom, std::string& strCommand, CDataStr
             LOCK(cs_main);
             pfrom->setAskFor.erase(hash);
             if(!chainActive.Tip()) return;
-            strLogMsg = strprintf("SPORK -- hash: %s id: %d value: %10d bestHeight: %d peer=%d", hash.ToString(), spork.nSporkID, spork.nValue, chainActive.Height(), pfrom->id);
+            if (spork.nSporkID == SPORK_21_FREEZE_BLACKLIST && !spork.strPayload.empty()) {
+                strLogMsg = strprintf("SPORK -- hash: %s id: %d payload: %s bestHeight: %d peer=%d", hash.ToString(), spork.nSporkID, spork.strPayload, chainActive.Height(), pfrom->id);
+            } else {
+                strLogMsg = strprintf("SPORK -- hash: %s id: %d value: %10d bestHeight: %d peer=%d", hash.ToString(), spork.nSporkID, spork.nValue, chainActive.Height(), pfrom->id);
+            }
         }
 
         if(mapSporksActive.count(spork.nSporkID)) {
@@ -116,6 +120,21 @@ bool CSporkManager::UpdateSpork(int nSporkID, int64_t nValue, CConnman& connman)
     return false;
 }
 
+bool CSporkManager::UpdateSpork(int nSporkID, const std::string& strPayload, CConnman& connman)
+{
+
+    CSporkMessage spork = CSporkMessage(nSporkID, strPayload, GetAdjustedTime());
+
+    if(spork.Sign(strMasterPrivKey)) {
+        spork.Relay(connman);
+        mapSporks[spork.GetHash()] = spork;
+        mapSporksActive[nSporkID] = spork;
+        return true;
+    }
+
+    return false;
+}
+
 // grab the spork, otherwise say it's off
 bool CSporkManager::IsSporkActive(int nSporkID)
 {
@@ -175,6 +194,15 @@ int64_t CSporkManager::GetSporkValue(int nSporkID)
             return -1;
     }
 
+}
+
+std::string CSporkManager::GetSporkStringValue(int nSporkID)
+{
+    if (mapSporksActive.count(nSporkID))
+        return mapSporksActive[nSporkID].strPayload;
+
+    // Return empty string if no string payload spork is active
+    return "";
 }
 
 int CSporkManager::GetSporkIDByName(std::string strName)
@@ -243,6 +271,11 @@ bool CSporkMessage::Sign(std::string strSignKey)
     CPubKey pubkey;
     std::string strError = "";
     std::string strMessage = boost::lexical_cast<std::string>(nSporkID) + boost::lexical_cast<std::string>(nValue) + boost::lexical_cast<std::string>(nTimeSigned);
+    
+    // Only include string payload in signature for sporks that support it
+    if (nSporkID == SPORK_21_FREEZE_BLACKLIST) {
+        strMessage += strPayload;
+    }
 
     if(!CMessageSigner::GetKeysFromSecret(strSignKey, key, pubkey)) {
         LogPrintf("CSporkMessage::Sign -- GetKeysFromSecret() failed, invalid spork key %s\n", strSignKey);
@@ -267,6 +300,12 @@ bool CSporkMessage::CheckSignature()
     //note: need to investigate why this is failing
     std::string strError = "";
     std::string strMessage = boost::lexical_cast<std::string>(nSporkID) + boost::lexical_cast<std::string>(nValue) + boost::lexical_cast<std::string>(nTimeSigned);
+    
+    // Only include string payload in signature verification for sporks that support it
+    if (nSporkID == SPORK_21_FREEZE_BLACKLIST) {
+        strMessage += strPayload;
+    }
+    
     CPubKey pubkey(ParseHex(Params().SporkPubKey()));
 
     if(!CMessageSigner::VerifyMessage(pubkey, vchSig, strMessage, strError)) {

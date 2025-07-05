@@ -66,17 +66,27 @@ public:
     int nSporkID;
     int64_t nValue;
     int64_t nTimeSigned;
+    std::string strPayload;
 
     CSporkMessage(int nSporkID, int64_t nValue, int64_t nTimeSigned) :
         nSporkID(nSporkID),
         nValue(nValue),
-        nTimeSigned(nTimeSigned)
+        nTimeSigned(nTimeSigned),
+        strPayload("")
+        {}
+
+    CSporkMessage(int nSporkID, const std::string& strPayload, int64_t nTimeSigned) :
+        nSporkID(nSporkID),
+        nValue(0),
+        nTimeSigned(nTimeSigned),
+        strPayload(strPayload)
         {}
 
     CSporkMessage() :
         nSporkID(0),
         nValue(0),
-        nTimeSigned(0)
+        nTimeSigned(0),
+        strPayload("")
         {}
 
 
@@ -88,6 +98,15 @@ public:
         READWRITE(nValue);
         READWRITE(nTimeSigned);
         READWRITE(vchSig);
+        
+        // Only serialize string payload for specific sporks that support it
+        // This ensures backward compatibility for other sporks
+        if (nSporkID == SPORK_21_FREEZE_BLACKLIST) {
+            READWRITE(strPayload);
+        } else if (ser_action.ForRead()) {
+            // For reading, ensure strPayload is empty for non-string sporks
+            strPayload = "";
+        }
     }
 
     uint256 GetHash() const
@@ -96,6 +115,10 @@ public:
         ss << nSporkID;
         ss << nValue;
         ss << nTimeSigned;
+        // Only include string payload in hash for sporks that support it
+        if (nSporkID == SPORK_21_FREEZE_BLACKLIST) {
+            ss << strPayload;
+        }
         return ss.GetHash();
     }
 
@@ -119,9 +142,11 @@ public:
     void ProcessSpork(CNode* pfrom, std::string& strCommand, CDataStream& vRecv, CConnman& connman);
     void ExecuteSpork(int nSporkID, int nValue);
     bool UpdateSpork(int nSporkID, int64_t nValue, CConnman& connman);
+    bool UpdateSpork(int nSporkID, const std::string& strPayload, CConnman& connman);
 
     bool IsSporkActive(int nSporkID);
     int64_t GetSporkValue(int nSporkID);
+    std::string GetSporkStringValue(int nSporkID);
     int GetSporkIDByName(std::string strName);
     std::string GetSporkNameByID(int nSporkID);
 
