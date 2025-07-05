@@ -17,7 +17,7 @@ class CSporkManager;
     - This would result in old clients getting confused about which spork is for what
 */
 static const int SPORK_START                                            = 10001;
-static const int SPORK_END                                              = 10016;
+static const int SPORK_END                                              = 10017;
 
 static const int SPORK_2_INSTANTSEND_ENABLED                            = 10001;
 static const int SPORK_3_INSTANTSEND_BLOCK_FILTERING                    = 10002;
@@ -31,6 +31,7 @@ static const int SPORK_14_REQUIRE_SENTINEL_FLAG                         = 10013;
 static const int SPORK_15_REQUIRE_FOUNDATION_FEE                        = 10014;
 static const int SPORK_16_XELISV2		                        = 10015;
 static const int SPORK_17_TIERED_MN		                        = 10016;
+static const int SPORK_21_FREEZE_BLACKLIST                              = 10017;
 
 static const int64_t SPORK_2_INSTANTSEND_ENABLED_DEFAULT                = 0;            // ON
 static const int64_t SPORK_3_INSTANTSEND_BLOCK_FILTERING_DEFAULT        = 0;            // ON
@@ -44,6 +45,7 @@ static const int64_t SPORK_14_REQUIRE_SENTINEL_FLAG_DEFAULT             = 407090
 static const int64_t SPORK_15_REQUIRE_FOUNDATION_FEE_DEFAULT            = 1706814000ULL;// 1st Feb 2024 19:00 UTC
 static const int64_t SPORK_16_XELISV2_DEFAULT 			        = 1724905600ULL;// Thursday, 29 August 2024 04:26:40
 static const int64_t SPORK_17_TIERED_MN_DEFAULT 		        = 1747418400ULL;// Friday, 16 May 2025 18:00 UTC
+static const int64_t SPORK_21_FREEZE_BLACKLIST_DEFAULT                  = 4070908800ULL;// OFF by default
 
 extern std::map<uint256, CSporkMessage> mapSporks;
 extern CSporkManager sporkManager;
@@ -62,17 +64,27 @@ public:
     int nSporkID;
     int64_t nValue;
     int64_t nTimeSigned;
+    std::string strPayload;  // String payload for complex sporks like blacklist
 
     CSporkMessage(int nSporkID, int64_t nValue, int64_t nTimeSigned) :
         nSporkID(nSporkID),
         nValue(nValue),
-        nTimeSigned(nTimeSigned)
+        nTimeSigned(nTimeSigned),
+        strPayload("")
+        {}
+
+    CSporkMessage(int nSporkID, int64_t nValue, int64_t nTimeSigned, const std::string& payload) :
+        nSporkID(nSporkID),
+        nValue(nValue),
+        nTimeSigned(nTimeSigned),
+        strPayload(payload)
         {}
 
     CSporkMessage() :
         nSporkID(0),
         nValue(0),
-        nTimeSigned(0)
+        nTimeSigned(0),
+        strPayload("")
         {}
 
 
@@ -84,6 +96,10 @@ public:
         READWRITE(nValue);
         READWRITE(nTimeSigned);
         READWRITE(vchSig);
+        // Only serialize string payload for newer SPORKs that need it
+        if (nSporkID == SPORK_21_FREEZE_BLACKLIST) {
+            READWRITE(strPayload);
+        }
     }
 
     uint256 GetHash() const
@@ -92,6 +108,10 @@ public:
         ss << nSporkID;
         ss << nValue;
         ss << nTimeSigned;
+        // Include payload in hash for SPORKs that use it
+        if (nSporkID == SPORK_21_FREEZE_BLACKLIST) {
+            ss << strPayload;
+        }
         return ss.GetHash();
     }
 
@@ -118,10 +138,16 @@ public:
 
     bool IsSporkActive(int nSporkID);
     int64_t GetSporkValue(int nSporkID);
+    std::string GetSporkString(int nSporkID);
     int GetSporkIDByName(std::string strName);
     std::string GetSporkNameByID(int nSporkID);
 
     bool SetPrivKey(std::string strPrivKey);
+    bool UpdateSpork(int nSporkID, int64_t nValue, const std::string& strPayload, CConnman& connman);
+
+    // Blacklist-specific methods
+    bool IsAddressBlacklisted(const std::string& address);
+    bool IsBlacklistActive();
 };
 
 #endif

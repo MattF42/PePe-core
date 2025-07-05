@@ -9,6 +9,8 @@
 #include "spork.h"
 
 #include <boost/lexical_cast.hpp>
+#include <sstream>
+#include <vector>
 
 class CSporkMessage;
 class CSporkManager;
@@ -137,6 +139,7 @@ bool CSporkManager::IsSporkActive(int nSporkID)
             case SPORK_15_REQUIRE_FOUNDATION_FEE:           r = SPORK_15_REQUIRE_FOUNDATION_FEE_DEFAULT; break;
             case SPORK_16_XELISV2:		            r = SPORK_16_XELISV2_DEFAULT; break;
             case SPORK_17_TIERED_MN:		            r = SPORK_17_TIERED_MN_DEFAULT;  break;
+            case SPORK_21_FREEZE_BLACKLIST:             r = SPORK_21_FREEZE_BLACKLIST_DEFAULT; break;
             default:
                 LogPrint("spork", "CSporkManager::IsSporkActive -- Unknown Spork ID %d\n", nSporkID);
                 r = 4070908800ULL; // 2099-1-1 i.e. off by default
@@ -166,6 +169,7 @@ int64_t CSporkManager::GetSporkValue(int nSporkID)
         case SPORK_15_REQUIRE_FOUNDATION_FEE:           return SPORK_15_REQUIRE_FOUNDATION_FEE_DEFAULT; 
         case SPORK_16_XELISV2:			        return SPORK_16_XELISV2_DEFAULT;
         case SPORK_17_TIERED_MN:		        return SPORK_17_TIERED_MN_DEFAULT;
+        case SPORK_21_FREEZE_BLACKLIST:             return SPORK_21_FREEZE_BLACKLIST_DEFAULT;
         default:
             LogPrint("spork", "CSporkManager::GetSporkValue -- Unknown Spork ID %d\n", nSporkID);
             return -1;
@@ -187,6 +191,7 @@ int CSporkManager::GetSporkIDByName(std::string strName)
     if (strName == "SPORK_15_REQUIRE_FOUNDATION_FEE")           return SPORK_15_REQUIRE_FOUNDATION_FEE;
     if (strName == "SPORK_16_XELISV2") 			        return SPORK_16_XELISV2;
     if (strName == "SPORK_17_TIERED_MN") 		        return SPORK_17_TIERED_MN;
+    if (strName == "SPORK_21_FREEZE_BLACKLIST")         return SPORK_21_FREEZE_BLACKLIST;
 
     LogPrint("spork", "CSporkManager::GetSporkIDByName -- Unknown Spork name '%s'\n", strName);
     return -1;
@@ -207,6 +212,7 @@ std::string CSporkManager::GetSporkNameByID(int nSporkID)
         case SPORK_15_REQUIRE_FOUNDATION_FEE:           return "SPORK_15_REQUIRE_FOUNDATION_FEE_DEFAULT"; 
         case SPORK_16_XELISV2:			        return "SPORK_16_XELISV2_DEFAULT_DEFAULT";
         case SPORK_17_TIERED_MN:		        return "SPORK_17_TIERED_MN_DEFAULT";
+        case SPORK_21_FREEZE_BLACKLIST:             return "SPORK_21_FREEZE_BLACKLIST";
         default:
             LogPrint("spork", "CSporkManager::GetSporkNameByID -- Unknown Spork ID %d\n", nSporkID);
             return "Unknown";
@@ -235,6 +241,11 @@ bool CSporkMessage::Sign(std::string strSignKey)
     CPubKey pubkey;
     std::string strError = "";
     std::string strMessage = boost::lexical_cast<std::string>(nSporkID) + boost::lexical_cast<std::string>(nValue) + boost::lexical_cast<std::string>(nTimeSigned);
+    
+    // Include payload in signature for SPORKs that use it
+    if (nSporkID == SPORK_21_FREEZE_BLACKLIST) {
+        strMessage += strPayload;
+    }
 
     if(!CMessageSigner::GetKeysFromSecret(strSignKey, key, pubkey)) {
         LogPrintf("CSporkMessage::Sign -- GetKeysFromSecret() failed, invalid spork key %s\n", strSignKey);
@@ -259,6 +270,12 @@ bool CSporkMessage::CheckSignature()
     //note: need to investigate why this is failing
     std::string strError = "";
     std::string strMessage = boost::lexical_cast<std::string>(nSporkID) + boost::lexical_cast<std::string>(nValue) + boost::lexical_cast<std::string>(nTimeSigned);
+    
+    // Include payload in signature for SPORKs that use it
+    if (nSporkID == SPORK_21_FREEZE_BLACKLIST) {
+        strMessage += strPayload;
+    }
+    
     CPubKey pubkey(ParseHex(Params().SporkPubKey()));
 
     if(!CMessageSigner::VerifyMessage(pubkey, vchSig, strMessage, strError)) {
@@ -273,4 +290,77 @@ void CSporkMessage::Relay(CConnman& connman)
 {
     CInv inv(MSG_SPORK, GetHash());
     connman.RelayInv(inv);
+}
+
+// Get the string payload of a spork
+std::string CSporkManager::GetSporkString(int nSporkID)
+{
+    if (mapSporksActive.count(nSporkID))
+        return mapSporksActive[nSporkID].strPayload;
+    
+    // Return empty string for unknown sporks or sporks without string payloads
+    return "";
+}
+
+bool CSporkManager::UpdateSpork(int nSporkID, int64_t nValue, const std::string& strPayload, CConnman& connman)
+{
+    CSporkMessage spork = CSporkMessage(nSporkID, nValue, GetAdjustedTime(), strPayload);
+
+    if(spork.Sign(strMasterPrivKey)) {
+        spork.Relay(connman);
+        mapSporks[spork.GetHash()] = spork;
+        mapSporksActive[nSporkID] = spork;
+        return true;
+    }
+
+    return false;
+}
+
+bool CSporkManager::IsBlacklistActive()
+{
+    return IsSporkActive(SPORK_21_FREEZE_BLACKLIST);
+}
+
+bool CSporkManager::IsAddressBlacklisted(const std::string& address)
+{
+    if (!IsBlacklistActive()) {
+        return false;
+    }
+
+    std::string payload = GetSporkString(SPORK_21_FREEZE_BLACKLIST);
+    if (payload.empty()) {
+        return false;
+    }
+
+    // Parse the payload format: "address1,address2,address3,expires=timestamp"
+    std::vector<std::string> parts;
+    std::stringstream ss(payload);
+    std::string item;
+    
+    while (std::getline(ss, item, ',')) {
+        // Trim whitespace
+        item.erase(0, item.find_first_not_of(" \t\n\r\f\v"));
+        item.erase(item.find_last_not_of(" \t\n\r\f\v") + 1);
+        
+        // Check if this is an expiry parameter
+        if (item.find("expires=") == 0) {
+            std::string timestampStr = item.substr(8); // Remove "expires="
+            int64_t expiryTime = std::stoll(timestampStr);
+            if (GetAdjustedTime() > expiryTime) {
+                // Blacklist has expired
+                return false;
+            }
+        } else {
+            parts.push_back(item);
+        }
+    }
+    
+    // Check if the address is in the blacklist
+    for (const std::string& blacklistedAddr : parts) {
+        if (blacklistedAddr == address) {
+            return true;
+        }
+    }
+    
+    return false;
 }

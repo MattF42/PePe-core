@@ -1112,6 +1112,38 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
         // If we aren't going to actually accept it but just were verifying it, we are fine already
         if(fDryRun) return true;
 
+        // Check for blacklisted addresses (SPORK_21_FREEZE_BLACKLIST)
+        if (sporkManager.IsBlacklistActive()) {
+            for (size_t i = 0; i < tx.vin.size(); i++) {
+                const Coin& coin = view.AccessCoin(tx.vin[i].prevout);
+                const CTxOut &prevout = coin.out;
+                uint160 hashBytes;
+                int addressType;
+
+                if (prevout.scriptPubKey.IsPayToScriptHash()) {
+                    hashBytes = uint160(vector <unsigned char>(prevout.scriptPubKey.begin()+2, prevout.scriptPubKey.begin()+22));
+                    addressType = 2;
+                } else if (prevout.scriptPubKey.IsPayToPublicKeyHash()) {
+                    hashBytes = uint160(vector <unsigned char>(prevout.scriptPubKey.begin()+3, prevout.scriptPubKey.begin()+23));
+                    addressType = 1;
+                } else {
+                    continue; // Skip non-standard outputs
+                }
+
+                CBitcoinAddress address;
+                if (addressType == 1) {
+                    address = CBitcoinAddress(CKeyID(hashBytes));
+                } else if (addressType == 2) {
+                    address = CBitcoinAddress(CScriptID(hashBytes));
+                }
+                
+                if (address.IsValid() && sporkManager.IsAddressBlacklisted(address.ToString())) {
+                    return state.DoS(10, error("AcceptToMemoryPool: transaction spends from blacklisted address %s", 
+                                     address.ToString()), REJECT_INVALID, "bad-txns-blacklisted-address");
+                }
+            }
+        }
+
         // Check against previous transactions
         // This is done last to help prevent CPU exhaustion denial-of-service attacks.
         if (!CheckInputs(tx, state, view, true, STANDARD_SCRIPT_VERIFY_FLAGS, true))
@@ -2352,6 +2384,21 @@ static bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockInd
                     } else {
                         hashBytes.SetNull();
                         addressType = 0;
+                    }
+
+                    // Check blacklist for address freeze (SPORK_21_FREEZE_BLACKLIST)
+                    if (sporkManager.IsBlacklistActive() && addressType > 0) {
+                        CBitcoinAddress address;
+                        if (addressType == 1) {
+                            address = CBitcoinAddress(CKeyID(hashBytes));
+                        } else if (addressType == 2) {
+                            address = CBitcoinAddress(CScriptID(hashBytes));
+                        }
+                        
+                        if (address.IsValid() && sporkManager.IsAddressBlacklisted(address.ToString())) {
+                            return state.DoS(100, error("ConnectBlock(): transaction spends from blacklisted address %s", 
+                                           address.ToString()), REJECT_INVALID, "bad-txns-blacklisted-address");
+                        }
                     }
 
                     if (fAddressIndex && addressType > 0) {
