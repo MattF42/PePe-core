@@ -238,11 +238,11 @@ std::string CSporkManager::GetSporkNameByID(int nSporkID)
         case SPORK_12_RECONSIDER_BLOCKS:                return "SPORK_12_RECONSIDER_BLOCKS";
         case SPORK_13_OLD_SUPERBLOCK_FLAG:              return "SPORK_13_OLD_SUPERBLOCK_FLAG";
         case SPORK_14_REQUIRE_SENTINEL_FLAG:            return "SPORK_14_REQUIRE_SENTINEL_FLAG";
-        case SPORK_15_REQUIRE_FOUNDATION_FEE:           return "SPORK_15_REQUIRE_FOUNDATION_FEE_DEFAULT"; 
-        case SPORK_16_XELISV2:			        return "SPORK_16_XELISV2_DEFAULT_DEFAULT";
-        case SPORK_17_TIERED_MN:		        return "SPORK_17_TIERED_MN_DEFAULT";
-        case SPORK_18_AUTOSPORK:		        return "SPORK_18_AUTOSPORK_DEFAULT";
-        case SPORK_21_FREEZE_BLACKLIST:		        return "SPORK_21_FREEZE_BLACKLIST_DEFAULT";
+        case SPORK_15_REQUIRE_FOUNDATION_FEE:           return "SPORK_15_REQUIRE_FOUNDATION_FEE"; 
+        case SPORK_16_XELISV2:			        return "SPORK_16_XELISV2";
+        case SPORK_17_TIERED_MN:		        return "SPORK_17_TIERED_MN";
+        case SPORK_18_AUTOSPORK:		        return "SPORK_18_AUTOSPORK";
+        case SPORK_21_FREEZE_BLACKLIST:		        return "SPORK_21_FREEZE_BLACKLIST";
         default:
             LogPrint("spork", "CSporkManager::GetSporkNameByID -- Unknown Spork ID %d\n", nSporkID);
             return "Unknown";
