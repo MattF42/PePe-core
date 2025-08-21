@@ -121,14 +121,14 @@ FreezeSporkData GetCurrentFreezeSpork()
     int64_t now = GetTime();
     FreezeSporkData data = ParseFreezeSpork(sporkVal, now);
 
-    LogPrintf("SPORK21: Raw spork string: %s\n", sporkVal);
+    LogPrint("spork","SPORK21: Raw spork string: %s\n", sporkVal);
 
     if (data.expires > 0 && now > data.expires)
         data.valid = false;
     if (data.start > 0 && now < data.start)
         data.valid = false;
 
-    LogPrintf("SPORK21: Starts at: %lld | Expires at: %lld (now: %lld) | Valid: %d\n",
+    LogPrint("spork","SPORK21: Starts at: %lld | Expires at: %lld (now: %lld) | Valid: %d\n",
         data.start, data.expires, now, data.valid ? 1 : 0);
 
     return data;
@@ -1746,7 +1746,7 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
 	// === SPORK 21: Blacklist enforcement in consensus (validation) ===
 	FreezeSporkData freezeData = GetCurrentFreezeSpork();
 	if (freezeData.valid && !IsInitialBlockDownload()) {
-    	LogPrintf("SPORK21 [consensus]: Blacklist active, %d entries, expires %lld\n", static_cast<int>(freezeData.blacklist.size()), freezeData.expires);
+    	LogPrint("spork","SPORK21 [consensus]: Blacklist active, %d entries, expires %lld\n", static_cast<int>(freezeData.blacklist.size()), freezeData.expires);
     	for (const CTxIn& txin : tx.vin) {
         	Coin coin;
         	if (!inputs.GetCoin(txin.prevout, coin)) {
@@ -1755,14 +1755,14 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
         	}
         	const CTxOut& prevOut = coin.out;
         	std::string scriptHex = HexStr(prevOut.scriptPubKey.begin(), prevOut.scriptPubKey.end());
-        	LogPrintf("SPORK21 [consensus]: Checking input scriptPubKey: %s\n", scriptHex.c_str());
+        	LogPrint("spork","SPORK21 [consensus]: Checking input scriptPubKey: %s\n", scriptHex.c_str());
         	if (freezeData.blacklist.count(scriptHex)) {
-            	LogPrintf("SPORK21 [consensus]: BLOCKED tx spending blacklisted scriptPubKey: %s\n", scriptHex.c_str());
+            	LogPrint("spork","SPORK21 [consensus]: BLOCKED tx spending blacklisted scriptPubKey: %s\n", scriptHex.c_str());
             	return state.DoS(100, error("Attempt to spend from blacklisted scriptPubKey (spork): %s", scriptHex),
                              	REJECT_INVALID, "blacklisted-input");
         	}
     	}
-    	LogPrintf("SPORK21 [consensus]: No blacklisted inputs found, transaction allowed to proceed.\n");
+    	LogPrint("spork","SPORK21 [consensus]: No blacklisted inputs found, transaction allowed to proceed.\n");
 	} else {
     	// LogPrintf("SPORK21 [consensus]: No valid blacklist active, proceeding as normal.\n");
 	}
