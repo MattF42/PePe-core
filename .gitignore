@@ -67,3 +67,4 @@ bench_dash
 # OS files
 .DS_Store
 Thumbs.db
+test_*
