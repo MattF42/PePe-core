@@ -1,0 +1,69 @@
+# Build artifacts
+Makefile
+Makefile.in
+*.o
+*.lo
+*.la
+*.a
+.deps/
+.dirstamp
+.libs/
+_libs/
+autom4te.cache/
+configure
+config.log
+config.status
+libtool
+aclocal.m4
+build-aux/compile
+build-aux/config.guess
+build-aux/config.sub
+build-aux/depcomp
+build-aux/install-sh
+build-aux/ltmain.sh
+build-aux/m4/libtool.m4
+build-aux/m4/ltoptions.m4
+build-aux/m4/ltsugar.m4
+build-aux/m4/ltversion.m4
+build-aux/m4/lt~obsolete.m4
+build-aux/missing
+build-aux/test-driver
+
+# Config files
+src/config/
+libdashconsensus.pc
+qa/pull-tester/run-bitcoind-for-test.sh
+qa/pull-tester/tests_config.py
+share/qt/Info.plist
+share/setup.nsi
+
+# Test and coverage
+*.gcda
+*.gcno
+test-suite.log
+*.trs
+coverage_percent.txt
+test_dash.coverage/
+total.coverage/
+qa/tmp/
+cache/
+
+# Binaries
+PEPEPOWd
+PEPEPOW-cli
+PEPEPOW-tx
+PEPEPOW-qt
+test_dash
+bench_dash
+
+# IDE and editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.sublime-*
+
+# OS files
+.DS_Store
+Thumbs.db
