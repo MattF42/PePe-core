@@ -385,7 +385,9 @@ crypto_libbitcoin_crypto_a_SOURCES = \
   crypto/sha512.cpp \
   crypto/sha512.h \
   crypto/xelisv2.cpp \
-  crypto/xelisv2.h
+  crypto/xelisv2.h \
+  crypto/hoohash/hoohash.c \
+  crypto/hoohash/hoohash.h
 
 if USE_ASM
 crypto_libbitcoin_crypto_a_SOURCES += crypto/sha256_sse4.cpp
