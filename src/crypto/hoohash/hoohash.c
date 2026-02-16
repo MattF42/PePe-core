@@ -33,6 +33,13 @@ static inline uint64_t read_uint64_le(const uint8_t *data) {
     return result;
 }
 
+static inline uint32_t read_uint32_le(const uint8_t *data) {
+    return ((uint32_t)data[0]) |
+           ((uint32_t)data[1] << 8) |
+           ((uint32_t)data[2] << 16) |
+           ((uint32_t)data[3] << 24);
+}
+
 static inline uint32_t read_uint32_be(const uint8_t *data) {
     return ((uint32_t)data[0] << 24) |
            ((uint32_t)data[1] << 16) |
@@ -223,11 +230,12 @@ void hoohashv110(const void* data, size_t len, uint8_t output[HOOHASH_HASH_SIZE]
     memcpy(matrixSeed, firstPass, HOOHASH_HASH_SIZE);
     generateHoohashMatrix(matrixSeed, mat);
     
-    // Extract nonce from last 8 bytes of input (for block headers)
+    // Extract nonce from last 4 bytes of input (for block headers)
+    // Bitcoin block headers use little-endian for nonce
     uint64_t nonce = 0;
-    if (len >= 8) {
-        const uint8_t *nonce_ptr = (const uint8_t *)data + len - 4; // nNonce is last 4 bytes
-        nonce = read_uint32_be(nonce_ptr);
+    if (len >= 4) {
+        const uint8_t *nonce_ptr = (const uint8_t *)data + len - 4;
+        nonce = read_uint32_le(nonce_ptr);
     }
     
     // Perform matrix multiplication
