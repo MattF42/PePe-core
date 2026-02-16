@@ -127,18 +127,18 @@ static double ComplexNonLinear(double x) {
     }
 }
 
-static double ForComplex(double forComplex) {
-    double complex;
+static double SafeComplexTransform(double input) {
+    double transformedValue;
     double rounds = 1;
-    complex = ComplexNonLinear(forComplex);
-    while (isnan(complex) || isinf(complex)) {
-        forComplex = forComplex * 0.1;
-        if (forComplex <= 0.0000000000001) {
+    transformedValue = ComplexNonLinear(input);
+    while (isnan(transformedValue) || isinf(transformedValue)) {
+        input = input * 0.1;
+        if (input <= 0.0000000000001) {
             return 0 * rounds;
         }
         rounds++;
     }
-    return complex * rounds;
+    return transformedValue * rounds;
 }
 
 static void generateHoohashMatrix(const uint8_t *hash, double mat[64][64]) {
@@ -173,7 +173,7 @@ static void HoohashMatrixMultiplication(double mat[64][64], const uint8_t *hashB
     uint32_t H[8] = {0};
     
     ConvertBytesToUint32Array(H, hashBytes);
-    double hashMod = (double)(H[0] ^ H[1] ^ H[2] ^ H[3] ^ H[4] ^ H[5] ^ H[6] ^ H[7]);
+    double hashXor = (double)(H[0] ^ H[1] ^ H[2] ^ H[3] ^ H[4] ^ H[5] ^ H[6] ^ H[7]);
     double nonceMod = (double)(nonce & 0xFF);
     double divider = 0.0001;
     double multiplier = 1234;
@@ -187,8 +187,8 @@ static void HoohashMatrixMultiplication(double mat[64][64], const uint8_t *hashB
     for (int i = 0; i < 64; i++) {
         for (int j = 0; j < 64; j++) {
             if (sw <= 0.02) {
-                double input = (mat[i][j] * hashMod * (double)vector[j] + nonceMod);
-                double output_val = ForComplex(input) * (double)vector[j] * multiplier;
+                double input = (mat[i][j] * hashXor * (double)vector[j] + nonceMod);
+                double output_val = SafeComplexTransform(input) * (double)vector[j] * multiplier;
                 product[i] += output_val;
             } else {
                 double output_val = mat[i][j] * divider * (double)vector[j];
