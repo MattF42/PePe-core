@@ -374,7 +374,7 @@ public:
         strNetworkID = "regtest";
         consensus.nNewHashHeight = 4;
 	consensus.nHoohashHeight = 6; 
-        consensus.nNewHashBits = 0x2000ffff;
+	consensus.nNewHashBits = 0x207fffff;
         consensus.nSubsidyHalvingInterval = 150;
         consensus.nMasternodePaymentsStartBlock = 240;
         consensus.nMasternodePaymentsIncreaseBlock = 350;
@@ -395,6 +395,7 @@ public:
         consensus.BIP34Height = -1; // BIP34 has not necessarily activated on regtest
         consensus.BIP34Hash = uint256();
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+        consensus.powLimit2 = consensus.powLimit;
         consensus.nPowTargetTimespan = 24 * 60 * 60; // PEPEPOW: 1 day
         consensus.nPowTargetSpacing = 2.5 * 60; // PEPEPOW: 2.5 minutes
         consensus.fPowAllowMinDifficultyBlocks = true;

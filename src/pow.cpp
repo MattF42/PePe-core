@@ -182,8 +182,14 @@ unsigned int GetNextWorkRequiredBTC(const CBlockIndex* pindexLast, const CBlockH
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
-    if((pindexLast->nHeight+1) == params.nNewHashHeight) return params.nNewHashBits; // Prevent a silly stall at hash algo change 
+    // if((pindexLast->nHeight+1) == params.nNewHashHeight) return params.nNewHashBits; // Prevent a silly stall at hash algo change 
+    // No longer needed since we are way past XelisV2 HF
 
+	// Regtest: make mining trivial
+     if (params.fPowNoRetargeting && params.fPowAllowMinDifficultyBlocks) {
+	             return 0x207fffff;
+	      }
+	
     // Most recent algo first
     if (pindexLast->nHeight + 1 >= params.nPowDGWHeight) {
         return DarkGravityWave(pindexLast, params);
