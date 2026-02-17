@@ -214,30 +214,37 @@ static void HoohashMatrixMultiplication(double mat[64][64], const uint8_t *hashB
 }
 
 // Main HoohashV110 function
-// For Bitcoin-derived blockchain PoW, we hash the entire block header
-void hoohashv110(const void* data, size_t len, uint8_t output[HOOHASH_HASH_SIZE]) {
+// For Bitcoin-derived blockchain PoW, we hash the entire (80-byte) block header
+void hoohashv110(const void* data, size_t len, uint8_t output[HOOHASH_HASH_SIZE])
+{
+    // Enforce the preimage definition: header bytes from nVersion..nNonce (80 bytes).
+    // This prevents accidental consensus changes if callers pass a different length.
+    if (len != 80) {
+        // Fail closed: produce a deterministic value that will not satisfy PoW.
+        // (Alternatively: assert(len == 80) if you're OK with abort in debug builds.)
+	     LogPrintf("HoohashV110: Len %d != 80 !!!!\n", len);
+        memset(output, 0, HOOHASH_HASH_SIZE);
+        return;
+    }
+
     blake3_hasher hasher;
     uint8_t firstPass[HOOHASH_HASH_SIZE];
     uint8_t matrixSeed[HOOHASH_HASH_SIZE];
     double mat[64][64];
-    
-    // First BLAKE3 pass on input data
+
+    // First BLAKE3 pass on input data (the block header bytes)
     blake3_hasher_init(&hasher);
     blake3_hasher_update(&hasher, data, len);
     blake3_hasher_finalize(&hasher, firstPass, HOOHASH_HASH_SIZE);
-    
+
     // Use first pass to seed matrix generation
     memcpy(matrixSeed, firstPass, HOOHASH_HASH_SIZE);
     generateHoohashMatrix(matrixSeed, mat);
-    
-    // Extract nonce from last 4 bytes of input (for block headers)
-    // Bitcoin block headers use little-endian for nonce
-    uint64_t nonce = 0;
-    if (len >= 4) {
-        const uint8_t *nonce_ptr = (const uint8_t *)data + len - 4;
-        nonce = read_uint32_le(nonce_ptr);
-    }
-    
+
+    // Bitcoin/Dash-style headers: nonce is 4 bytes at offset 76, little-endian
+    const uint8_t* nonce_ptr = ((const uint8_t*)data) + 76;
+    const uint64_t nonce = (uint64_t)read_uint32_le(nonce_ptr);
+
     // Perform matrix multiplication
     HoohashMatrixMultiplication(mat, firstPass, output, nonce);
 }
