@@ -220,10 +220,6 @@ void hoohashv110(const void* data, size_t len, uint8_t output[HOOHASH_HASH_SIZE]
     // Enforce the preimage definition: header bytes from nVersion..nNonce (80 bytes).
     // This prevents accidental consensus changes if callers pass a different length.
     if (len != 80) {
-        // Fail closed: produce a deterministic value that will not satisfy PoW.
-        // (Alternatively: assert(len == 80) if you're OK with abort in debug builds.)
-	     LogPrintf("HoohashV110: Len %d != 80 !!!!\n", len);
-        memset(output, 0, HOOHASH_HASH_SIZE);
         return;
     }
 

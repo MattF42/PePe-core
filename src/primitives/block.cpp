@@ -3,9 +3,6 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-// Version bits for PoW selection
-static constexpr int32_t XELISV2_BIT      = 0x8000;
-static constexpr int32_t HOOHASHV110_BIT  = 0x4000;
 
 #include "primitives/block.h"
 
@@ -16,6 +13,7 @@ static constexpr int32_t HOOHASHV110_BIT  = 0x4000;
 #include "util.h"
 #include "crypto/xelisv2.h"
 #include "uint256.h"
+#include "crypto/hoohash/hoohash.h"
 
 template<typename T1>
 void pre_xelis_hash_v2(const T1 pbegin, const T1 pend, uint8_t hash_result[32])
@@ -33,9 +31,16 @@ void pre_hoohash_v110(const T1 pbegin, const T1 pend, uint8_t hash_result[32])
 
     const size_t len = (pend - pbegin) * sizeof(pbegin[0]);
 
-    // We expect BEGIN(nVersion) .. END(nNonce) to be a standard 80-byte header span.
-    // Enforcing this prevents accidental consensus changes if header serialization changes.
-    assert(len == 80);
+if (len != 80) {
+        // Avoid spamming logs in case of repeated malformed input
+        static bool logged = false;
+        if (!logged) {
+            LogPrintf("HoohashV110: unexpected header length %u (expected 80)\n", (unsigned)len);
+            logged = true;
+        }
+        memset(hash_result, 0, 32);
+        return;
+    }
 
     // Hash the serialized block header bytes [nVersion..nNonce]
     hoohashv110(static_cast<const void*>(&pbegin[0]),
@@ -47,6 +52,9 @@ void pre_hoohash_v110(const T1 pbegin, const T1 pend, uint8_t hash_result[32])
 uint256 CBlockHeader::GetPOWHash() const
 {
     uint256 PePeHash;
+// Version bits for PoW selection
+static constexpr int32_t XELISV2_BIT      = 0x8000;
+static constexpr int32_t HOOHASHV110_BIT  = 0x4000;
 
     // Hoohash wins if both bits are present
     if (nVersion & HOOHASHV110_BIT) {
@@ -70,6 +78,9 @@ uint256 CBlockHeader::GetPOWHash() const
 uint256 CBlockHeader::GetHash() const
 {
     uint256 PePeHash;
+// Version bits for PoW selection
+static constexpr int32_t XELISV2_BIT      = 0x8000;
+static constexpr int32_t HOOHASHV110_BIT  = 0x4000;
 
     // Keep GetHash() consistent with GetPOWHash() (your repo currently treats them the same)
     if (nVersion & HOOHASHV110_BIT) {

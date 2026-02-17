@@ -2166,9 +2166,9 @@ int32_t ComputeBlockVersion(const CBlockIndex* pindexPrev, const Consensus::Para
 
     // if(pindexPrev->nHeight > params.nNewHashHeight - 1) {
         if (pindexPrev->nHeight +1  >= (int)params.nHoohashHeight) {
-    		nVersion |= HOOHASHV110_BIT;
+    		nVersion |= 0x4000;
     		// optional: clear Xelis bit to avoid advertising both
-    		nVersion &= ~XELISV2_BIT;
+    		nVersion &= ~0x8000;
 		} else if(pindexPrev->nHeight + 1 >= params.nNewHashHeight) {
         if (sporkManager.IsSporkActive(SPORK_16_XELISV2)) {
             nVersion |= 0x8000;
