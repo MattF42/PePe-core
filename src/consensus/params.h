@@ -86,6 +86,7 @@ struct Params {
     uint256 nMinimumChainWork;
     uint256 defaultAssumeValid;
     uint64_t nNewHashHeight;
+    uint64_t nHoohashHeight;
     uint64_t nTierMNHeight;
     uint32_t nNewHashBits;
 };

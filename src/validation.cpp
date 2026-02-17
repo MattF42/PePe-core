@@ -2165,13 +2165,17 @@ int32_t ComputeBlockVersion(const CBlockIndex* pindexPrev, const Consensus::Para
     }
 
     // if(pindexPrev->nHeight > params.nNewHashHeight - 1) {
-    if(pindexPrev->nHeight + 1 >= params.nNewHashHeight) {
+        if (pindexPrev->nHeight +1  >= (int)params.nHoohashHeight) {
+    		nVersion |= HOOHASHV110_BIT;
+    		// optional: clear Xelis bit to avoid advertising both
+    		nVersion &= ~XELISV2_BIT;
+		} else if(pindexPrev->nHeight + 1 >= params.nNewHashHeight) {
         if (sporkManager.IsSporkActive(SPORK_16_XELISV2)) {
             nVersion |= 0x8000;
         }
-        if(Params().NetworkIDString() == CBaseChainParams::TESTNET) {
-            nVersion |= 0x8000;
-        }
+        // if(Params().NetworkIDString() == CBaseChainParams::TESTNET) {
+            // nVersion |= 0x8000;
+        // }
     }
     return nVersion;
 }
@@ -3564,7 +3568,14 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
                              REJECT_OBSOLETE, "bad-version");
 
     // Reject headers without 0x8000 in them after hardfork at 1930000
-    if (!(block.nVersion & 0x8000) && nHeight >= consensusParams.nNewHashHeight) {
+
+
+    if (nHeight >= (int)consensusParams.nHoohashHeight) {
+    if (!(block.nVersion & 0x4000)) {
+        return state.Invalid(error("%s : invalid-version (missing hoohash bit) at height %d version %d\n", __func__, nHeight, block.nVersion),
+                             REJECT_OBSOLETE, "invalid-version");
+    }
+} else if (!(block.nVersion & 0x8000) && nHeight >= consensusParams.nNewHashHeight) {
         return state.Invalid(error("%s : invalid-version at height %s version %s\n", __func__),
                              REJECT_OBSOLETE, "invalid-version");
     }
