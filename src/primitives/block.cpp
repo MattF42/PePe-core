@@ -42,6 +42,7 @@ if (len != 80) {
         return;
     }
 
+            // LogPrintf("HoohashV110: will be called\n" );
     // Hash the serialized block header bytes [nVersion..nNonce]
     hoohashv110(static_cast<const void*>(&pbegin[0]),
                 (pend - pbegin) * sizeof(pbegin[0]),
