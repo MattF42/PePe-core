@@ -215,10 +215,10 @@ static void HoohashMatrixMultiplication(double mat[64][64], const uint8_t *hashB
 
 // Main HoohashV110 function
 // For Bitcoin-derived blockchain PoW, we hash the entire (80-byte) block header
+// BUT - for the matrix, so there is only one per Tip to solve, we zero the nonce
+
 void hoohashv110(const void* data, size_t len, uint8_t output[HOOHASH_HASH_SIZE])
 {
-    // Enforce the preimage definition: header bytes from nVersion..nNonce (80 bytes).
-    // This prevents accidental consensus changes if callers pass a different length.
     if (len != 80) {
         return;
     }
@@ -228,19 +228,31 @@ void hoohashv110(const void* data, size_t len, uint8_t output[HOOHASH_HASH_SIZE]
     uint8_t matrixSeed[HOOHASH_HASH_SIZE];
     double mat[64][64];
 
-    // First BLAKE3 pass on input data (the block header bytes)
+    const uint8_t *hdr = (const uint8_t *)data;
+
+    /* 1) Nonce-dependent first pass: BLAKE3(full header) */
     blake3_hasher_init(&hasher);
-    blake3_hasher_update(&hasher, data, len);
+    blake3_hasher_update(&hasher, hdr, 80);
     blake3_hasher_finalize(&hasher, firstPass, HOOHASH_HASH_SIZE);
 
-    // Use first pass to seed matrix generation
-    memcpy(matrixSeed, firstPass, HOOHASH_HASH_SIZE);
+    /* 2) Nonce-independent matrix seed: BLAKE3(header with nonce bytes zeroed) */
+    uint8_t hdr_masked[80];
+    memcpy(hdr_masked, hdr, 80);
+    hdr_masked[76] = 0;
+    hdr_masked[77] = 0;
+    hdr_masked[78] = 0;
+    hdr_masked[79] = 0;
+
+    blake3_hasher_init(&hasher);
+    blake3_hasher_update(&hasher, hdr_masked, 80);
+    blake3_hasher_finalize(&hasher, matrixSeed, HOOHASH_HASH_SIZE);
+
+    /* 3) Matrix is constant for all nonces for this header template */
     generateHoohashMatrix(matrixSeed, mat);
 
-    // Bitcoin/Dash-style headers: nonce is 4 bytes at offset 76, little-endian
-    const uint8_t* nonce_ptr = ((const uint8_t*)data) + 76;
-    const uint64_t nonce = (uint64_t)read_uint32_le(nonce_ptr);
+    /* 4) Read the real nonce from the real header (little-endian uint32 at offset 76) */
+    const uint64_t nonce = (uint64_t)read_uint32_le(hdr + 76);
 
-    // Perform matrix multiplication
+    /* 5) Final PoW */
     HoohashMatrixMultiplication(mat, firstPass, output, nonce);
 }
