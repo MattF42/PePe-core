@@ -14,6 +14,7 @@
 #include "crypto/xelisv2.h"
 #include "uint256.h"
 #include "crypto/hoohash/hoohash.h"
+#include "streams.h"
 
 template<typename T1>
 void pre_xelis_hash_v2(const T1 pbegin, const T1 pend, uint8_t hash_result[32])
@@ -61,8 +62,16 @@ static constexpr int32_t HOOHASHV110_BIT  = 0x4000;
     if (nVersion & HOOHASHV110_BIT) {
         uint8_t hash_result[32] = {0};
 
-        // Implement this wrapper to hash the header bytes [nVersion..nNonce] and write 32 bytes to hash_result
-        pre_hoohash_v110(BEGIN(nVersion), END(nNonce), hash_result);
+
+        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        ss << *this;
+
+        if (ss.size() != 80) {
+            LogPrintf("HoohashV110: unexpected serialized header length %u (expected 80)\n", (unsigned)ss.size());
+            memset(hash_result, 0, 32);
+        } else {
+		hoohashv110((const void*)&ss[0], ss.size(), hash_result);
+        }
 
         std::memcpy(&PePeHash, hash_result, sizeof(hash_result));
     } else if (nVersion & XELISV2_BIT) {
@@ -86,7 +95,17 @@ static constexpr int32_t HOOHASHV110_BIT  = 0x4000;
     // Keep GetHash() consistent with GetPOWHash() (your repo currently treats them the same)
     if (nVersion & HOOHASHV110_BIT) {
         uint8_t hash_result[32] = {0};
-        pre_hoohash_v110(BEGIN(nVersion), END(nNonce), hash_result);
+        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        ss << *this;
+
+        if (ss.size() != 80) {
+            LogPrintf("HoohashV110: unexpected serialized header length %u (expected 80)\n", (unsigned)ss.size());
+            memset(hash_result, 0, 32);
+        } else {
+	    hoohashv110((const void*)&ss[0], ss.size(), hash_result);
+        }
+
+
         std::memcpy(&PePeHash, hash_result, sizeof(hash_result));
     } else if (nVersion & XELISV2_BIT) {
         uint8_t hash_result[32] = {0};

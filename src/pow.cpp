@@ -247,6 +247,8 @@ bool CheckProofOfWork(uint256 hash, unsigned int nBits, const Consensus::Params&
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
 
     // Check range
+    if (Params().NetworkIDString() == CBaseChainParams::MAIN) {
+
         if(nTime >= 1724905600 ) { // SPORK16 activation
             if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powLimit2))
                 return error("CheckProofOfWork(): nBits below minimum work2");
@@ -254,6 +256,7 @@ bool CheckProofOfWork(uint256 hash, unsigned int nBits, const Consensus::Params&
             if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powLimit))
                 return error("CheckProofOfWork(): nBits below minimum work");
         }
+    }
 
 
     // Check proof of work matches claimed amount
