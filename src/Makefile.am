@@ -389,6 +389,16 @@ crypto_libbitcoin_crypto_a_SOURCES = \
   crypto/hoohash/hoohash.c \
   crypto/hoohash/hoohash.h 
 
+# Hoohash must be deterministic across builds: disable fast-math and FP contraction (FMA)
+HOOHASH_DETERMINISTIC_CFLAGS = \
+  -fno-fast-math \
+  -ffp-contract=off \
+  -fexcess-precision=standard -mno-fma -mno-fma4
+
+# Apply to the crypto static library (this is where hoohash.c is built)
+crypto_libbitcoin_crypto_a_CFLAGS = $(AM_CFLAGS) $(PIE_FLAGS) $(HOOHASH_DETERMINISTIC_CFLAGS)
+crypto_libbitcoin_crypto_a_CPPFLAGS = $(AM_CPPFLAGS)
+
 if USE_ASM
 crypto_libbitcoin_crypto_a_SOURCES += crypto/sha256_sse4.cpp
 endif
