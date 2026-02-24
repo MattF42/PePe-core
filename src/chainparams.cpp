@@ -323,7 +323,7 @@ public:
         vFixedSeeds.clear();
         vSeeds.clear();
         vSeeds.push_back(CDNSSeedData("82.163.79.208", "82.163.79.208"));
-        vSeeds.push_back(CDNSSeedData("141.147.71.107", "141.147.71.107"));
+        vSeeds.push_back(CDNSSeedData("149.102.187.227", "149.102.187.227"));
         vSeeds.push_back(CDNSSeedData("132.145.54.241", "132.145.54.241"));
 
         // Testnet PEPEPOW addresses start with 'y'
