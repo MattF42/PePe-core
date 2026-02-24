@@ -395,7 +395,7 @@ crypto_libbitcoin_crypto_a_SOURCES = \
 HOOHASH_DETERMINISTIC_CFLAGS = \
   -fno-fast-math \
   -ffp-contract=off \
-  -fexcess-precision=standard -mno-fma -mno-fma4
+  -fexcess-precision=standard
 
 # Apply to the crypto static library (this is where hoohash.c is built)
 crypto_libbitcoin_crypto_a_CFLAGS = $(AM_CFLAGS) $(PIE_FLAGS) $(HOOHASH_DETERMINISTIC_CFLAGS)
