@@ -244,9 +244,9 @@ class CTestNetParams : public CChainParams {
 public:
     CTestNetParams() {
         strNetworkID = "test";
-        consensus.nNewHashHeight = 4;
-	consensus.nHoohashHeight = 6; 
-        consensus.nNewHashBits = 0x2000ffff;
+        consensus.nNewHashHeight = 2;
+	consensus.nHoohashHeight = 3; 
+        consensus.nNewHashBits = 0x1f068db2;
         consensus.nSubsidyHalvingInterval = 210240;
         consensus.nMasternodePaymentsStartBlock = 4010; // not true, but it's ok as long as it's less then nMasternodePaymentsIncreaseBlock
         consensus.nMasternodePaymentsIncreaseBlock = 4030;
@@ -267,8 +267,8 @@ public:
         consensus.BIP34Height = 1;
         consensus.BIP34Hash = uint256S("0x0000047d24635e347be3aaaeb66c26be94901a2f962feccd4f95090191f208c1");
         // consensus.powLimit = uint256S("00fffff000000000000000000000000000000000000000000000000000000000");
-        consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-        consensus.powLimit2 = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+	consensus.powLimit  = uint256S("0x00068db22d0e5604189374bc6a7ef9db22d0e5604189374bc6a7ef9db22d0e56");
+	consensus.powLimit2 = consensus.powLimit;
         consensus.nPowTargetTimespan = 24 * 60 * 60; // PEPEPOW: 1 day
         consensus.nPowTargetSpacing = 2.5 * 60; // PEPEPOW: 2.5 minutes
         consensus.fPowAllowMinDifficultyBlocks = true;
@@ -345,7 +345,7 @@ public:
         fMiningRequiresPeers = false;
         fDefaultConsistencyChecks = false;
         fRequireStandard = false;
-        fMineBlocksOnDemand = false;
+        fMineBlocksOnDemand = true;
         fTestnetToBeDeprecatedFieldRPC = true;
 
         nPoolMaxTransactions = 3;
