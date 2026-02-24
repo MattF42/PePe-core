@@ -66,14 +66,16 @@ static constexpr int32_t HOOHASHV110_BIT  = 0x4000;
         CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
         ss << *this;
 
+	/*
 	LogPrintf("POWDBG hdr80=%s bits=%08x time=%u ver=%08x\n",
 			          HexStr(ss.begin(), ss.end()), nBits, nTime, (uint32_t)nVersion);
+				  */
         if (ss.size() != 80) {
             LogPrintf("HoohashV110: unexpected serialized header length %u (expected 80)\n", (unsigned)ss.size());
             memset(hash_result, 0, 32);
         } else {
 		hoohashv110((const void*)&ss[0], ss.size(), hash_result);
-		LogPrintf("POWDBG hoohash=%s\n", HexStr(hash_result, hash_result + 32));
+		// LogPrintf("POWDBG hoohash=%s\n", HexStr(hash_result, hash_result + 32));
         }
 
         uint256 out;

@@ -387,7 +387,9 @@ crypto_libbitcoin_crypto_a_SOURCES = \
   crypto/xelisv2.cpp \
   crypto/xelisv2.h \
   crypto/hoohash/hoohash.c \
-  crypto/hoohash/hoohash.h 
+  crypto/hoohash/hoohash.h \
+  crypto/hoohash/dev_vectors.cpp \
+  crypto/hoohash/dev_vectors.h
 
 # Hoohash must be deterministic across builds: disable fast-math and FP contraction (FMA)
 HOOHASH_DETERMINISTIC_CFLAGS = \

@@ -246,8 +246,10 @@ bool CheckProofOfWork(uint256 hash, unsigned int nBits, const Consensus::Params&
     // LogPrintf("CheckProofOfWork:  Hash is  %s\n",hash.ToString());
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
 
-    LogPrintf("SUBMITPOW CheckProofOfWork: nBits=%08x nTime=%u hash=%s target=%s neg=%d ovf=%d\n",
-		                  nBits, nTime, UintToArith256(hash).ToString(), bnTarget.ToString(), fNegative, fOverflow);
+    /*
+     LogPrintf("SUBMITPOW CheckProofOfWork: nBits=%08x nTime=%u hash=%s target=%s neg=%d ovf=%d\n",
+		                   nBits, nTime, UintToArith256(hash).ToString(), bnTarget.ToString(), fNegative, fOverflow);
+				   */
 
     // Check range
     if (Params().NetworkIDString() == CBaseChainParams::MAIN) {

@@ -855,14 +855,16 @@ UniValue submitblock(const UniValue& params, bool fHelp)
         );
 
     CBlock block;
-    LogPrintf("SUBMITPOW submitblock hex prefix=%s\n", params[0].get_str().substr(0, 160));
-    uint32_t x = 0x11223344;
-    LogPrintf("ENDIAN selftest: x=%08x le32toh=%08x be32toh=%08x\n", x, le32toh(x), be32toh(x));
+    // LogPrintf("SUBMITPOW submitblock hex prefix=%s\n", params[0].get_str().substr(0, 160));
+    // uint32_t x = 0x11223344;
+    // LogPrintf("ENDIAN selftest: x=%08x le32toh=%08x be32toh=%08x\n", x, le32toh(x), be32toh(x));
     if (!DecodeHexBlk(block, params[0].get_str()))
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "Block decode failed");
 
+    /*
     LogPrintf("SUBMITPOW submitblock decoded: ver=%08x time=%u bits=%08x nonce=%u\n",
 		              (uint32_t)block.nVersion, block.nTime, block.nBits, block.nNonce);
+			      */
     uint256 hash = block.GetHash();
     bool fBlockPresent = false;
     {
