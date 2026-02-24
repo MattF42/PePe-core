@@ -7,6 +7,8 @@ This document specifies the **byte-level preimage** and **algorithm steps** for 
 
 It is written to be implementation-agnostic: C/C++, Rust, Go, JS, etc. should all be able to interoperate if they follow this spec.
 
+NB - Hoohash is especially sensitive to FP64 variances, and should NOT be assumed to be determinstic beyond the reference C implementation without extensive vector testing.
+
 ---
 
 ## 1. Scope
