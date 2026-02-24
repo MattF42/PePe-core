@@ -189,7 +189,22 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
      if (params.fPowNoRetargeting && params.fPowAllowMinDifficultyBlocks) {
 	             return 0x207fffff;
 	      }
-	
+
+// On testnet, let the first 25 blocks be super easy, and thus generateable
+//
+
+if (params.fPowAllowMinDifficultyBlocks) {
+        int nextHeight = (pindexLast ? pindexLast->nHeight + 1 : 0);
+        const int EASY_BOOTSTRAP_BLOCKS = 25; // <= change this to the number of easy blocks you want
+        if (nextHeight < EASY_BOOTSTRAP_BLOCKS) {
+            LogPrintf("GetNextWorkRequired: bootstrap mode - returning easy nNewHashBits below BlockHeight 25\n");
+            return 0x207fffff;
+        }
+    }
+
+            
+             
+
     // Most recent algo first
     if (pindexLast->nHeight + 1 >= params.nPowDGWHeight) {
         return DarkGravityWave(pindexLast, params);
