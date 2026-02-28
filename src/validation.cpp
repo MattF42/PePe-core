@@ -3406,7 +3406,7 @@ bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool f
                          REJECT_INVALID, "high-hash");
 
     // Check timestamp
-    if (block.GetBlockTime() > GetAdjustedTime() + 2 * 60 * 60)
+    if (block.GetBlockTime() > GetAdjustedTime() + 1 * 60 * 15)
         return state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),
                              REJECT_INVALID, "time-too-new");
 
