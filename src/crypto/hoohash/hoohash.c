@@ -219,7 +219,8 @@ static void HoohashMatrixMultiplication(double mat[64][64], const uint8_t *hashB
 
 void hoohashv110(const void* data, size_t len, uint8_t output[HOOHASH_HASH_SIZE])
 {
-    if (len != 80) {
+    if (len != 80) { // Hard to imagine this actually happening... but ..
+        memset(output, 0xff, 32); // Correctly invalidate hash
         return;
     }
 
@@ -255,4 +256,11 @@ void hoohashv110(const void* data, size_t len, uint8_t output[HOOHASH_HASH_SIZE]
 
     /* 5) Final PoW */
     HoohashMatrixMultiplication(mat, firstPass, output, nonce);
+
+    /* 6) Turn into expected LE order _here_ not later on */
+    uint8_t reversed[32];
+    for (int i = 0; i < 32; i++) {
+        reversed[i] = outhash[31-i] & 0xff;
+    }
+    memcpy(output, reversed, 32);
 }
