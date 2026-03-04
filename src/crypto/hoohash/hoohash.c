@@ -260,7 +260,7 @@ void hoohashv110(const void* data, size_t len, uint8_t output[HOOHASH_HASH_SIZE]
     /* 6) Turn into expected LE order _here_ not later on */
     uint8_t reversed[32];
     for (int i = 0; i < 32; i++) {
-        reversed[i] = outhash[31-i] & 0xff;
+        reversed[i] = output[31-i] & 0xff;
     }
     memcpy(output, reversed, 32);
 }

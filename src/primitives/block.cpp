@@ -78,7 +78,8 @@ static constexpr int32_t HOOHASHV110_BIT  = 0x4000;
 		// LogPrintf("POWDBG hoohash=%s\n", HexStr(hash_result, hash_result + 32));
         }
 
-        return hash_result;	
+        std::memcpy(&PePeHash, hash_result, sizeof(hash_result));
+        return PePeHash;
 	// Hash is now correctly reversed at generation time
         // uint256 out;
 	// for (int i = 0; i < 32; ++i) out.begin()[i] = hash_result[31 - i];
@@ -116,7 +117,8 @@ static constexpr int32_t HOOHASHV110_BIT  = 0x4000;
         }
 
 
-        return hash_result;	
+        std::memcpy(&PePeHash, hash_result, sizeof(hash_result));
+        return PePeHash;
 	// Hash is now correctly reversed at generation time
         // uint256 out;
         // for (int i = 0; i < 32; ++i) out.begin()[i] = hash_result[31 - i];
