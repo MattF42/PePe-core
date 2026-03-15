@@ -10,7 +10,7 @@
  * network protocol versioning
  */
 
-static const int PROTOCOL_VERSION = 70520;
+static const int PROTOCOL_VERSION = 70521;
 
 //! initial proto version, to be increased after version/verack negotiation
 static const int INIT_PROTO_VERSION = 209;
@@ -26,6 +26,7 @@ static const int MIN_PEER_SPORK_16 = 70503;
 static const int MIN_PEER_SPORK_17 = 70510;
 static const int MIN_PEER_SPORK_18 = 70520;
 static const int MIN_PEER_SPORK_15_POST_1070280 = 70313; // We stalled at 1070288
+static const int MIN_PEER_HOOHASH = 70521;
 
 //! nTime field added to CAddress, starting with this version;
 //! if possible, avoid requesting addresses nodes older than this

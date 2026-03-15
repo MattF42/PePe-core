@@ -120,7 +120,7 @@ public:
     CMainParams() {
         strNetworkID = "main";
         consensus.nNewHashHeight = 1930000; // Friday 30th August 2024, evening time ish (Zulu Time)
-	consensus.nHoohashHeight = 41351570; // Improbably high far awawy placeholder for the moment
+	consensus.nHoohashHeight = 4354200; // April 10, 2026 Betwewen 18:00 and 19:00 UTC on a good day
         // consensus.nNewHashBits = 0x1e00ffff;
          consensus.nNewHashBits = 0x1f00ffff;
         consensus.nSubsidyHalvingInterval = 210240; // Note: actual number of blocks per calendar year with DGW v3 is ~200700 (for example 449750 - 249050)

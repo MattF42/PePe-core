@@ -1148,6 +1148,20 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             return false;
         }
 
+	// Enforce Peer Version Post HooHash HF
+	{
+    	LOCK(cs_main);  // Ensure thread safety for chain access
+    	if (chainActive.Tip() && chainActive.Tip()->nHeight >= Params().GetConsensus().nHoohashHeight) {
+        	if (nVersion < MIN_PEER_HOOHASH) {
+            		LogPrintf("peer=%d using pre-HooHash version %i; disconnecting\n", pfrom->id, nVersion);
+            		connman.PushMessageWithVersion(pfrom, INIT_PROTO_VERSION, NetMsgType::REJECT, strCommand, REJECT_OBSOLETE,
+                                   		strprintf("Version must be %d or greater (post-HooHash fork)", MIN_PEER_HOOHASH));
+            		pfrom->fDisconnect = true;
+            		return false;
+        		}
+    		}
+	}
+
         if (sporkManager.IsSporkActive( SPORK_18_AUTOSPORK  )) {
             if (nVersion < MIN_PEER_SPORK_18)
               {
