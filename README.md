@@ -40,7 +40,7 @@ With enough support - PEPEPOW is set to become the second most popular proof-of-
 </tr>
 <tr>
 <td>Algorithm</td>
-<td>memehash until block 1930000 then XelisV2</td>
+<td>memehash until block 1930000 then XelisV2, until block 4,354,200, then HooHash V110</td>
 </tr>
 <tr>
 <td>Block Time</td>
