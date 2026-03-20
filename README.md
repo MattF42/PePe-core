@@ -106,7 +106,3 @@ Future and Historical Reward Structure:
 The original dev fee was removed from this chain and it is now entirely community-maintained / run. To thank or support those who contribute to this project please consider making a contribution. Any amount helps! 
 
 Foztor : PMG1tmwb7fRrPnKmRCuAzKBd2t7KPDw6Nf
-
-Setvin : PNT3qZ2sshPvyS5egaCpfEQZmfHoZEA1Bu
-
-Mining4People : PNb6mBbGdudbM7UXGouazzUQZZTf9kzReW 
