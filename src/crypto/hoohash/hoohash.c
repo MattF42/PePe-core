@@ -176,7 +176,7 @@ static void HoohashMatrixMultiplication(double mat[64][64], const uint8_t *hashB
     double hashXor = (double)(H[0] ^ H[1] ^ H[2] ^ H[3] ^ H[4] ^ H[5] ^ H[6] ^ H[7]);
     double nonceMod = (double)(nonce & 0xFF);
     double divider = 0.0001;
-    double multiplier = 1234;
+    double multiplier = 1234.0;
     double sw = 0.0;
 
     for (int i = 0; i < 32; i++) {
