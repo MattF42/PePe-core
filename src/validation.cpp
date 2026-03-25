@@ -3586,13 +3586,21 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
 
 
     if (nHeight >= (int)consensusParams.nHoohashHeight) {
-    if (!(block.nVersion & 0x4000)) {
-        return state.Invalid(error("%s : invalid-version (missing hoohash bit) at height %d version %d\n", __func__, nHeight, block.nVersion),
-                             REJECT_OBSOLETE, "invalid-version");
-    }
-} else if (!(block.nVersion & 0x8000) && nHeight >= consensusParams.nNewHashHeight) {
-        return state.Invalid(error("%s : invalid-version at height %s version %s\n", __func__),
-                             REJECT_OBSOLETE, "invalid-version");
+        if (!(block.nVersion & 0x4000)) {
+            return state.Invalid(error("%s : invalid-version (missing hoohash bit) at height %d version %d\n", __func__, nHeight, block.nVersion),
+                                 REJECT_OBSOLETE, "invalid-version");
+        }
+    } else {
+        // PREVENT EARLY HOOHASH
+        if (block.nVersion & 0x4000) {
+            return state.Invalid(error("%s : invalid-version (hoohash bit set before activation) at height %d\n", __func__, nHeight),
+                                 REJECT_OBSOLETE, "invalid-version");
+        }
+        
+        if (!(block.nVersion & 0x8000) && nHeight >= consensusParams.nNewHashHeight) {
+            return state.Invalid(error("%s : invalid-version (missing xelis bit) at height %d version %d\n", __func__, nHeight, block.nVersion),
+                                 REJECT_OBSOLETE, "invalid-version");
+        }
     }
 
     return true;
