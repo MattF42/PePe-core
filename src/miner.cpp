@@ -147,7 +147,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
         if (nHeight >= (int)chainparams.GetConsensus().nHoohashHeight) {
             // Hoohash wins (we can allow bits to co-exist, but no reason to set Xelis bit post-Hoohash)
             pblock->nVersion |= 0x4000;
-            pblock->nVersion &= ~0x800; // optional but recommended to avoid ambiguous templates
+            pblock->nVersion &= ~0x8000; // optional but recommended to avoid ambiguous templates // Correct silly typo - non critical
         } else  if(nHeight >= chainparams.GetConsensus().nNewHashHeight) {
 		if (sporkManager.IsSporkActive(SPORK_16_XELISV2)) {
 	       	  pblock->nVersion |= 0x8000;
