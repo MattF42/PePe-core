@@ -29,7 +29,7 @@ With enough support - PEPEPOW is set to become the second most popular proof-of-
  - M4P Block Explorer [PEPEPOW-EXPLORER](https://explorer2.pepepow.org/)
  - Reborn Discord [DISCORD] https://discord.gg/pxKvp4GJh5
  - Twitter [TWITTER](https://twitter.com/PEPEWCommunity)
- - Reddit [REDDIT](https://www.reddit.com/r/PEPEWCommunity/)
+ - Reddit [REDDIT](https://www.reddit.com/r/PepePowCommunity/)
   
 ## <h2><strong>Coins Specifications:</strong></h2>
 <table>
