@@ -23,22 +23,22 @@ First, enable port 8833
 sudo ufw allow 8833/tcp
 ```
 
-To download the latest wallet version (2.7.1.7) and unpack it from a ubuntu command line terminal, use the following
+To download the latest wallet version (2.9.0.3) and unpack it from a ubuntu command line terminal, use the following
 ```
-mkdir pepew2717 &&
-sudo chmod +x -R pepew2717 &&
-cd pepew2717 &&
-wget -c https://github.com/MattF42/PePe-core/releases/download/v2.7.1.7/PEPEPOW-v2.7.1.7-996a351-release-`uname -m`-linux-gnu.tgz -O - | tar -xz &&
+mkdir pepew2903 &&
+sudo chmod +x -R pepew2903 &&
+cd pepew2903 &&
+wget -c https://github.com/MattF42/PePe-core/releases/download/v2.9.0.3/PEPEPOW-v2.9.0.3-693a9b9-release-`uname -m`-linux-gnu.tgz -O - | tar -xz &&
 cd &&
-sudo chmod +x -R pepew2717 &&
-cd pepew2717
+sudo chmod +x -R pepew2903 &&
+cd pepew2903
 ```
 
 #### **1) Create a new wallet and transfer an exact total of 10,000,000 PEPEW!**
 *(Note: It has to be 10M no more or less! You must also wait for the Block confirmation to be greater than 15)*
 You may use the GUI to receive your coins, but then you need to run the "PEPEWd" before proceeding. You can do so in the terminal with the following command
 ```
-~/pepew2717/PEPEPOWd
+~/pepew2903/PEPEPOWd
 ```
 
 #### **2) Synchronize the block chain**
@@ -46,18 +46,18 @@ You may use the GUI to receive your coins, but then you need to run the "PEPEWd"
 
 Before you can start your node, your daemon must be fully synced. To check how many blocks you already have you can use 
 ```
-~/pepew2717/PEPEPOW-cli getblockcount
+~/pepew2903/PEPEPOW-cli getblockcount
 ```
 
 When you are fully updated you can confirm your balance is exactly 10,000,000 by running the following command
 ```
-~/pepew2717/PEPEPOW-cli getbalance
+~/pepew2903/PEPEPOW-cli getbalance
 ```
 
 Once you have done that, you are ready to get your genkey which will be used to setup your masternode.
 ```
-~/pepew2717/PEPEPOW-cli masternode outputs &&
-~/pepew2717/PEPEPOW-cli masternode genkey
+~/pepew2903/PEPEPOW-cli masternode outputs &&
+~/pepew2903/PEPEPOW-cli masternode genkey
 ```
 
 #### **3) Open the PEPEPOW.conf file and write to it:**
@@ -97,10 +97,10 @@ sudo reboot
 
 #### **6) Start master node:**
 ```
-~/pepew2717/PEPEPOW-cli masternode start-all
+~/pepew2903/PEPEPOW-cli masternode start-all
 ```
 
 #### **7) Check Status**
 ```
-~/pepew2717/PEPEPOW-cli masternode status
+~/pepew2903/PEPEPOW-cli masternode status
 ```
