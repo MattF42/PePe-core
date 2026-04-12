@@ -38,7 +38,7 @@ cd pepew2903
 *(Note: It has to be 10M no more or less! You must also wait for the Block confirmation to be greater than 15)*
 You may use the GUI to receive your coins, but then you need to run the "PEPEWd" before proceeding. You can do so in the terminal with the following command
 ```
-~/pepew2903/PEPEPOWd
+~/pepew2903/PEPEPOWd -daemon
 ```
 
 #### **2) Synchronize the block chain**
