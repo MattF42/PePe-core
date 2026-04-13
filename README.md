@@ -26,7 +26,6 @@ With enough support - PEPEPOW is set to become the second most popular proof-of-
  - Dice Game [DICE](https://dice-pepepow.foztor.net/)
  - Mining Pool [COMMUNITY POOL](https://community-pool.pepepow.org/)
  - Block Explorer [PEPEPOW-EXPLORER](https://explorer.pepepow.org/)
- - M4P Block Explorer [PEPEPOW-EXPLORER](https://explorer2.pepepow.org/)
  - Reborn Discord [DISCORD] https://discord.gg/pxKvp4GJh5
  - Twitter [TWITTER](https://twitter.com/PEPEWCommunity)
  - Reddit [REDDIT](https://www.reddit.com/r/PepePowCommunity/)
