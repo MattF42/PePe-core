@@ -52,11 +52,11 @@ With enough support - PEPEPOW is set to become the second most popular proof-of-
 </tr>
 <tr>
 <td>Network Port</td>
-<td>8832</td>
+<td>8833</td>
 </tr>
 <tr>
 <td>RPC Port</td>
-<td>8833</td>
+<td>8832 (by default)</td>
 </tr>
 <tr>
 <td>Subsidy halving interval</td>
