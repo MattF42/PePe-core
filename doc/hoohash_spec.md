@@ -170,6 +170,11 @@ Recommended C compile flags:
 
 ```
 
+Additional X64 flags that may be required, especially on Windows to avoid use of the x87 FPU
+```
+ -mfpmath=sse -msse2
+```
+
 Every miner/pool implementation should include a KAT (samples are provided in src/crypto/hoohash):
 
 A KAT vector contains:
