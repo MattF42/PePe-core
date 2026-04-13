@@ -252,6 +252,10 @@ AX_CHECK_COMPILE_FLAG([-msse4.1],[[SSE41_CXXFLAGS="-msse4.1"]],,[[$CXXFLAG_WERRO
 AX_CHECK_COMPILE_FLAG([-mavx -mavx2],[[AVX2_CXXFLAGS="-mavx -mavx2"]],,[[$CXXFLAG_WERROR]])
 AX_CHECK_COMPILE_FLAG([-msse4 -msha -maes],[[X86_SHANI_CXXFLAGS="-msse4 -msha -maes"]],,[[$CXXFLAG_WERROR]])
 
+dnl Safe injection of x86/x64 floating point determinism flags for Hoohash
+AX_CHECK_COMPILE_FLAG([-mno-fma], [HOOHASH_X86_CFLAGS="-mno-fma -mno-fma4 -mfpmath=sse -msse2"], [HOOHASH_X86_CFLAGS=""], [$CXXFLAG_WERROR])
+AC_SUBST(HOOHASH_X86_CFLAGS)
+
 TEMP_CXXFLAGS="$CXXFLAGS"
 CXXFLAGS="$CXXFLAGS $SSE42_CXXFLAGS"
 AC_MSG_CHECKING(for assembler crc32 support)
