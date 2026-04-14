@@ -354,13 +354,15 @@ public:
         strSporkPubKey = "0236564958155b5a5febd1b026e2f0964a0d411ec28dc209675c0da003d1ad29ab";
 
         checkpointData = (CCheckpointData) {
-                boost::assign::map_list_of
-                        ( 0, uint256S("0x000004ac806a95514c329a8cf20303e68b9257bdf29ea520173b5d09022863ac")),
-                1683638200, // * UNIX timestamp of last checkpoint block
-                0,    // * total number of transactions between genesis and last checkpoint
-                //   (the tx=... number in the SetBestChain debug.log lines)
-                0        // * estimated number of transactions per day after checkpoint
-        };
+        boost::assign::map_list_of
+                ( 0, uint256S("0x00000a308cc3b469703a3bc1aa55bc251a71c9287d7b413242592c0ab0a31f13"))
+          ( 1920000, uint256S("0x000000000018cef21f56b393e0fbb3c5b28c77f0a6134ea2c0424fc4fe937fdc"))
+          ( 4362478, uint256S("0x000000034626a743eb0e7219cea2142e92a3000d8e83d224d255aa06d2157ac8")),
+        1776171075, // * UNIX timestamp of last checkpoint block
+        5530258,    // * total number of transactions between genesis and last checkpoint
+                    //   (the tx=... number in the SetBestChain debug.log lines)
+        5045        // * estimated number of transactions per day after checkpoint
+};
 
     }
 };
