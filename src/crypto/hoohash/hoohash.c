@@ -10,7 +10,7 @@
 #include "../blake3.h"
 #include <string.h>
 #ifdef HAVE_OPENLIBM
-#include <openlibm/openlibm_math.h>
+#include <openlibm_math.h>
 #else
 #include <math.h>
 #endif
