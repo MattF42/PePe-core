@@ -256,6 +256,53 @@ dnl Safe injection of x86/x64 floating point determinism flags for Hoohash
 AX_CHECK_COMPILE_FLAG([-mno-fma], [HOOHASH_X86_CFLAGS="-mno-fma -mno-fma4 -mfpmath=sse -msse2"], [HOOHASH_X86_CFLAGS=""], [$CXXFLAG_WERROR])
 AC_SUBST(HOOHASH_X86_CFLAGS)
 
+dnl Check for OpenLibm (provides cross-platform deterministic math for Hoohash)
+dnl
+dnl OpenLibm installs its headers into <prefix>/include/openlibm/, but the
+dnl headers internally include each other with flat paths (e.g. openlibm_math.h
+dnl does #include <openlibm_defs.h>).  We must add the openlibm subdirectory
+dnl itself to the preprocessor search path so that both our own include and the
+dnl library's internal includes resolve correctly.
+AC_LANG_PUSH([C])
+TEMP_CPPFLAGS="$CPPFLAGS"
+TEMP_CFLAGS="$CFLAGS"
+TEMP_LIBS="$LIBS"
+
+dnl Locate the openlibm header directory
+OPENLIBM_INCDIR=""
+for _olm_dir in "$prefix/include/openlibm" "/usr/local/include/openlibm" "/usr/include/openlibm"; do
+  if test -f "$_olm_dir/openlibm_math.h"; then
+    OPENLIBM_INCDIR="$_olm_dir"
+    break
+  fi
+done
+
+have_openlibm=no
+if test -n "$OPENLIBM_INCDIR"; then
+  CPPFLAGS="-I$OPENLIBM_INCDIR $CPPFLAGS"
+  AC_CHECK_HEADER([openlibm_math.h],
+    [AC_CHECK_LIB([openlibm], [sin],
+      [OPENLIBM_LIBS="-lopenlibm"
+       have_openlibm=yes
+       AC_MSG_NOTICE([Using OpenLibm for deterministic Hoohash math])],
+      [])],
+    [])
+fi
+
+CPPFLAGS="$TEMP_CPPFLAGS"
+CFLAGS="$TEMP_CFLAGS"
+LIBS="$TEMP_LIBS"
+if test x$have_openlibm = xyes; then
+  OPENLIBM_CPPFLAGS="-DHAVE_OPENLIBM -I$OPENLIBM_INCDIR"
+else
+  OPENLIBM_LIBS="-lm"
+  OPENLIBM_CPPFLAGS=""
+  AC_MSG_WARN([OpenLibm not found -- falling back to system libm. Hoohash may not be deterministic across platforms.])
+fi
+AC_SUBST(OPENLIBM_LIBS)
+AC_SUBST(OPENLIBM_CPPFLAGS)
+AC_LANG_POP([C])
+
 TEMP_CXXFLAGS="$CXXFLAGS"
 CXXFLAGS="$CXXFLAGS $SSE42_CXXFLAGS"
 AC_MSG_CHECKING(for assembler crc32 support)

@@ -9,7 +9,11 @@
 #include "hoohash.h"
 #include "../blake3.h"
 #include <string.h>
+#ifdef HAVE_OPENLIBM
+#include <openlibm_math.h>
+#else
 #include <math.h>
+#endif
 
 // Constants
 #define PI 3.14159265358979323846
