@@ -111,6 +111,17 @@ CDBWrapper::CDBWrapper(const boost::filesystem::path& path, size_t nCacheSize, b
         TryCreateDirectory(path);
         LogPrintf("Opening LevelDB in %s\n", path.string());
     }
+#ifdef WIN32
+    if (!fMemory &&
+        path.filename().string() == "index" &&
+        path.parent_path().filename().string() == "blocks") {
+        const bool fWinMmapBlockIndex = GetBoolArg("-winmmapblockindex", false);
+        leveldb::SetWindowsBlockIndexMmapEnabled(fWinMmapBlockIndex);
+        if (fWinMmapBlockIndex) {
+            LogPrintf("Experimental Windows mmap enabled for blocks/index LevelDB table reads\n");
+        }
+    }
+#endif
     leveldb::Status status = leveldb::DB::Open(options, path.string(), &pdb);
     dbwrapper_private::HandleError(status);
     LogPrintf("Opened LevelDB successfully\n");
