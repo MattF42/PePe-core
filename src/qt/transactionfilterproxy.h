@@ -18,6 +18,8 @@ class TransactionFilterProxy : public QSortFilterProxyModel
 public:
     explicit TransactionFilterProxy(QObject *parent = 0);
 
+    void setSourceModel(QAbstractItemModel *sourceModel) override;
+
     /** Earliest date that can be represented (far in the past) */
     static const QDateTime MIN_DATE;
     /** Last date that can be represented (far in the future) */
@@ -55,6 +57,9 @@ public:
 
 protected:
     bool filterAcceptsRow(int source_row, const QModelIndex & source_parent) const;
+
+private Q_SLOTS:
+    void refreshConfirmations();
 
 private:
     QDateTime dateFrom;

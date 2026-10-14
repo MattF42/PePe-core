@@ -14,6 +14,7 @@
 
 #ifdef ENABLE_WALLET
 #include "paymentservertests.h"
+#include "transactionfilterproxytests.h"
 #endif
 
 #include <QCoreApplication>
@@ -50,6 +51,9 @@ int main(int argc, char *argv[])
     if (QTest::qExec(&test1) != 0)
         fInvalid = true;
 #ifdef ENABLE_WALLET
+    TransactionFilterProxyTests transactionProxyTests;
+    if (QTest::qExec(&transactionProxyTests) != 0)
+        fInvalid = true;
     PaymentServerTests test2;
     if (QTest::qExec(&test2) != 0)
         fInvalid = true;

@@ -143,17 +143,37 @@ void WalletModel::pollBalanceChanged()
     if(!lockWallet)
         return;
 
-    if(fForceCheckBalanceChanged || chainActive.Height() != cachedNumBlocks || privateSendClient.nPrivateSendRounds != cachedPrivateSendRounds || cachedTxLocks != nCompleteTXLocks)
+    const CBlockIndex *tip = chainActive.Tip();
+    const uint256 tipHash = tip ? tip->GetBlockHash() : uint256();
+    const bool tipChanged = tipHash != cachedTipHash;
+    const bool reorg = !cachedTipHash.IsNull() &&
+        (cachedNumBlocks > chainActive.Height() || !chainActive[cachedNumBlocks] ||
+         chainActive[cachedNumBlocks]->GetBlockHash() != cachedTipHash);
+    const bool catchingUp = IsInitialBlockDownload() ||
+        (tip && tip->GetBlockTime() < GetAdjustedTime() - 90 * 60);
+    // Only coalesce the expensive GUI snapshot for large wallets during catch-up.
+    // Do not consume dirty flags/tip changes when deferred. Live operation and
+    // reorgs retain the normal poll cadence; sending still checks immediately.
+    if (!reorg && catchingUp && wallet->mapWallet.size() >= 10000 &&
+        balanceRefreshTimer.isValid() && balanceRefreshTimer.elapsed() < 5000)
+        return;
+
+    if (fForceCheckBalanceChanged || tipChanged || privateSendClient.nPrivateSendRounds != cachedPrivateSendRounds || cachedTxLocks != nCompleteTXLocks)
     {
         fForceCheckBalanceChanged = false;
-
-        // Balance and number of transactions might have changed
         cachedNumBlocks = chainActive.Height();
+        cachedTipHash = tipHash;
         cachedPrivateSendRounds = privateSendClient.nPrivateSendRounds;
 
+        QElapsedTimer timing;
+        timing.start();
         checkBalanceChanged();
-        if(transactionTableModel)
-            transactionTableModel->updateConfirmations();
+        const qint64 balanceMs = timing.elapsed();
+        if (transactionTableModel)
+            transactionTableModel->updateConfirmations(reorg);
+        LogPrint("qt", "WalletModel refresh: wallet_txs=%u balance_ms=%d total_ms=%d catchup=%d reorg=%d\n",
+                 wallet->mapWallet.size(), balanceMs, timing.elapsed(), catchingUp, reorg);
+        balanceRefreshTimer.start();
     }
 }
 

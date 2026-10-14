@@ -166,8 +166,13 @@ public:
             parent->endRemoveRows();
             break;
         case CT_UPDATED:
-            // Miscellaneous updates -- nothing to do, status update will take care of this, and is only computed for
-            // visible transactions.
+            // Confirmation, abandonment and conflict notifications can arrive at
+            // the same height. Invalidate these records before notifying proxies.
+            for (int row = lowerIndex; row < upperIndex; ++row)
+                cachedWallet[row].status.cur_num_blocks = -1;
+            if (inModel)
+                Q_EMIT parent->dataChanged(parent->index(lowerIndex, 0),
+                                          parent->index(upperIndex - 1, parent->columnCount(QModelIndex()) - 1));
             break;
         }
     }
@@ -272,14 +277,20 @@ void TransactionTableModel::updateTransaction(const QString &hash, int status, b
     priv->updateWallet(updated, status, showTransaction);
 }
 
-void TransactionTableModel::updateConfirmations()
+void TransactionTableModel::updateConfirmations(bool force)
 {
-    // Blocks came in since last poll.
-    // Invalidate status (number of confirmations) and (possibly) description
-    //  for all rows. Qt is smart enough to only actually request the data for the
-    //  visible rows.
-    Q_EMIT dataChanged(index(0, Status), index(priv->size()-1, Status));
-    Q_EMIT dataChanged(index(0, ToAddress), index(priv->size()-1, ToAddress));
+    if (priv->size() == 0)
+        return;
+    if (force) {
+        // A reorg (including a same-height replacement) can affect any row.
+        for (int row = 0; row < priv->size(); ++row)
+            priv->cachedWallet[row].status.cur_num_blocks = -1;
+        Q_EMIT dataChanged(index(0, 0), index(priv->size() - 1, columnCount(QModelIndex()) - 1));
+    } else {
+        // Depth/maturity changes do not change the sort key or conflict filter.
+        // Repaint through the proxies without their source-wide re-sort/filter.
+        Q_EMIT confirmationsChanged();
+    }
 }
 
 int TransactionTableModel::rowCount(const QModelIndex &parent) const
@@ -721,7 +732,7 @@ QModelIndex TransactionTableModel::index(int row, int column, const QModelIndex 
     TransactionRecord *data = priv->index(row);
     if(data)
     {
-        return createIndex(row, column, priv->index(row));
+        return createIndex(row, column, data);
     }
     return QModelIndex();
 }

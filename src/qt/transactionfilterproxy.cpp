@@ -29,31 +29,44 @@ TransactionFilterProxy::TransactionFilterProxy(QObject *parent) :
 {
 }
 
+void TransactionFilterProxy::setSourceModel(QAbstractItemModel *model)
+{
+    if (sourceModel())
+        disconnect(sourceModel(), SIGNAL(confirmationsChanged()), this, SLOT(refreshConfirmations()));
+    QSortFilterProxyModel::setSourceModel(model);
+    if (model && model->metaObject()->indexOfSignal("confirmationsChanged()") != -1)
+        connect(model, SIGNAL(confirmationsChanged()), this, SLOT(refreshConfirmations()));
+}
+
+void TransactionFilterProxy::refreshConfirmations()
+{
+    if (rowCount() > 0 && columnCount() > 0)
+        Q_EMIT dataChanged(index(0, 0), index(rowCount() - 1, columnCount() - 1));
+}
+
 bool TransactionFilterProxy::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
     QModelIndex index = sourceModel()->index(sourceRow, 0, sourceParent);
 
-    int type = index.data(TransactionTableModel::TypeRole).toInt();
-    QDateTime datetime = index.data(TransactionTableModel::DateRole).toDateTime();
-    bool involvesWatchAddress = index.data(TransactionTableModel::WatchonlyRole).toBool();
-    QString address = index.data(TransactionTableModel::AddressRole).toString();
-    QString label = index.data(TransactionTableModel::LabelRole).toString();
-    qint64 amount = llabs(index.data(TransactionTableModel::AmountRole).toLongLong());
-    int status = index.data(TransactionTableModel::StatusRole).toInt();
-
-    if(!showInactive && status == TransactionStatus::Conflicted)
+    if (typeFilter != ALL_TYPES && !(TYPE(index.data(TransactionTableModel::TypeRole).toInt()) & typeFilter))
         return false;
-    if(!(TYPE(type) & typeFilter))
+    if (watchOnlyFilter != WatchOnlyFilter_All) {
+        bool watchOnly = index.data(TransactionTableModel::WatchonlyRole).toBool();
+        if (watchOnly != (watchOnlyFilter == WatchOnlyFilter_Yes))
+            return false;
+    }
+    if (dateFrom != MIN_DATE || dateTo != MAX_DATE) {
+        QDateTime date = index.data(TransactionTableModel::DateRole).toDateTime();
+        if (date < dateFrom || date > dateTo)
+            return false;
+    }
+    if (!addrPrefix.isEmpty() &&
+        !index.data(TransactionTableModel::AddressRole).toString().contains(addrPrefix, Qt::CaseInsensitive) &&
+        !index.data(TransactionTableModel::LabelRole).toString().contains(addrPrefix, Qt::CaseInsensitive))
         return false;
-    if (involvesWatchAddress && watchOnlyFilter == WatchOnlyFilter_No)
+    if (minAmount > 0 && llabs(index.data(TransactionTableModel::AmountRole).toLongLong()) < minAmount)
         return false;
-    if (!involvesWatchAddress && watchOnlyFilter == WatchOnlyFilter_Yes)
-        return false;
-    if(datetime < dateFrom || datetime > dateTo)
-        return false;
-    if (!address.contains(addrPrefix, Qt::CaseInsensitive) && !label.contains(addrPrefix, Qt::CaseInsensitive))
-        return false;
-    if(amount < minAmount)
+    if (!showInactive && index.data(TransactionTableModel::StatusRole).toInt() == TransactionStatus::Conflicted)
         return false;
 
     return true;

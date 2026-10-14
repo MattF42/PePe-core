@@ -17,6 +17,8 @@
 #include <vector>
 
 #include <QObject>
+#include <QElapsedTimer>
+#include "uint256.h"
 
 class AddressTableModel;
 class OptionsModel;
@@ -239,6 +241,8 @@ private:
     CAmount cachedWatchImmatureBalance;
     EncryptionStatus cachedEncryptionStatus;
     int cachedNumBlocks;
+    uint256 cachedTipHash;
+    QElapsedTimer balanceRefreshTimer;
     int cachedTxLocks;
     int cachedPrivateSendRounds;
 
