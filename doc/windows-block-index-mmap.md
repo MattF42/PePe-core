@@ -64,12 +64,51 @@ It specifically checks for obsolete SST files that might remain if Windows
 refused a delete while a view was mapped. It does not cover every concurrency
 or external file-sharing situation.
 
-**Provenance limit:** the Windows executable originated from the earlier
-`perf/startup-win-mmap` experimental branch. The mmap implementation and
-smoke source copied to this isolated branch are byte-for-byte identical to
-those tested sources, but a fresh full Qt build directly from this clean
-review branch has **not** been independently verified yet. Do not describe
-this isolated branch's build or CI as PASS without running it.
+### 2026-10-14 isolated PR #3 Qt runtime (user-supplied `debug_pr3.log`)
+
+The user supplied a Windows Qt runtime log identified as the PR #3 test.
+Important checkpoints, on a real PEPEPOW datadir containing `wallet3.dat`:
+
+```text
+11:03:47 Experimental Windows mmap enabled for blocks/index LevelDB table reads
+11:06:53 No coin database inconsistencies in last 289 blocks (322 transactions)
+11:06:53  block index          186490ms
+11:06:53 Windows block-index mmap summary: attempts=541 mapped=541 fallback=0 (limit=0 open=0 size=0 mapping=0 view=0)
+11:07:19  wallet                26263ms
+11:07:20 init message: Done loading
+11:16:35 Shutdown: done
+```
+
+The log shows `mapBlockIndex.size() = 5102660`, wallet load, continued
+peer/block synchronization (tip 5102477 -> 5105971, progress 1.000000),
+and a normal clean shutdown. It contains no LevelDB corruption, reindex,
+or mmap failure messages. **Functional startup/sync/shutdown on Windows:
+PASS for this run.**
+
+The same log has unrelated-looking nonfatal protocol warnings:
+`ERROR: Requesting unset send version for node` (11 instances) and
+`ProcessMessages(version, 108 bytes) FAILED peer=12`. It also contains
+35 periodic `Double SUPERBLOCK_EXPECTED` diagnostics during syncing.
+Those did not prevent reaching the network tip or shutdown; their root
+causes were not investigated in this mmap review.
+
+**Build provenance boundary:** the log demonstrates an mmap-enabled Qt
+binary ran on Windows and is user-identified as PR #3, but does **not**
+itself include the executable SHA256, PE32+ build report or embedded
+commit identity. Cross-build provenance for exact clean-branch HEAD
+`f4b4ea30fe381bd2ce599aa55942e8411b3fc4a0` therefore still requires
+the corresponding builder report/hash before marking that separate gate
+independently verified.
+
+**No speedup claim:** 186.49 seconds for the block-index stage in this
+run is consistent with the large variation previously observed; this
+does not establish a causal performance advantage.
+
+**Earlier-build reference:** the older Windows Qt experimental build
+reported 533/533 mapped SST opens and the standalone synthetic
+compaction smoke passed twice (212/212 mapped). This clean-branch log
+adds real Windows startup/sync/shutdown evidence, not a repetition of
+the synthetic compaction test.
 
 ## Standalone regression source
 
