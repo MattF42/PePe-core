@@ -328,6 +328,25 @@ class EnvWrapper : public Env {
   Env* target_;
 };
 
+#if defined(_WIN32) || defined(WIN32)
+// PEPEPOW experimental startup optimization. The Windows Env still applies
+// its own x86_64, path, and table-file checks before attempting an mmap.
+extern void SetWindowsBlockIndexMmapEnabled(bool enabled);
+
+// Process-wide counters for eligible blocks/index SST random-access opens.
+// These are snapshots, not a synchronized transaction across all fields.
+struct WindowsBlockIndexMmapStats {
+  uint64_t attempts;
+  uint64_t mapped;
+  uint64_t fallback_limit;
+  uint64_t fallback_open;
+  uint64_t fallback_size;
+  uint64_t fallback_mapping;
+  uint64_t fallback_view;
+};
+extern WindowsBlockIndexMmapStats GetWindowsBlockIndexMmapStats();
+#endif
+
 }  // namespace leveldb
 
 #endif  // STORAGE_LEVELDB_INCLUDE_ENV_H_
