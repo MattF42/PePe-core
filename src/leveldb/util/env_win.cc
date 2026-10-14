@@ -21,6 +21,8 @@
 #include <errno.h>
 #include <io.h>
 #include <algorithm>
+#include <cctype>
+#include <limits>
 
 #ifdef max
 #undef max
@@ -37,6 +39,39 @@
 //Declarations
 namespace leveldb
 {
+
+static volatile LONG g_windows_block_index_mmap_enabled = 0;
+// Count eligible table-file opens, never individual Read calls.
+static volatile LONG g_mmap_attempts = 0;
+static volatile LONG g_mmap_mapped = 0;
+static volatile LONG g_mmap_fallback_limit = 0;
+static volatile LONG g_mmap_fallback_open = 0;
+static volatile LONG g_mmap_fallback_size = 0;
+static volatile LONG g_mmap_fallback_mapping = 0;
+static volatile LONG g_mmap_fallback_view = 0;
+
+void SetWindowsBlockIndexMmapEnabled(bool enabled)
+{
+    ::InterlockedExchange(&g_windows_block_index_mmap_enabled, enabled ? 1 : 0);
+}
+
+static uint64_t MmapCounterSnapshot(volatile LONG* counter)
+{
+    return static_cast<uint64_t>(::InterlockedCompareExchange(counter, 0, 0));
+}
+
+WindowsBlockIndexMmapStats GetWindowsBlockIndexMmapStats()
+{
+    WindowsBlockIndexMmapStats stats;
+    stats.attempts = MmapCounterSnapshot(&g_mmap_attempts);
+    stats.mapped = MmapCounterSnapshot(&g_mmap_mapped);
+    stats.fallback_limit = MmapCounterSnapshot(&g_mmap_fallback_limit);
+    stats.fallback_open = MmapCounterSnapshot(&g_mmap_fallback_open);
+    stats.fallback_size = MmapCounterSnapshot(&g_mmap_fallback_size);
+    stats.fallback_mapping = MmapCounterSnapshot(&g_mmap_fallback_mapping);
+    stats.fallback_view = MmapCounterSnapshot(&g_mmap_fallback_view);
+    return stats;
+}
 
 namespace Win32
 {
@@ -101,6 +136,32 @@ private:
     HANDLE _hFile;
     const std::string _filename;
     DISALLOW_COPY_AND_ASSIGN(Win32RandomAccessFile);
+};
+
+class MmapLimiter
+{
+public:
+    MmapLimiter();
+    bool Acquire();
+    void Release();
+private:
+    port::Mutex _mu;
+    int _allowed;
+    DISALLOW_COPY_AND_ASSIGN(MmapLimiter);
+};
+
+class Win32MmapReadableFile : public RandomAccessFile
+{
+public:
+    Win32MmapReadableFile(const std::string& fname, char* base, size_t length, MmapLimiter* limiter);
+    virtual ~Win32MmapReadableFile();
+    virtual Status Read(uint64_t offset, size_t n, Slice* result, char* scratch) const;
+private:
+    char* const _base;
+    const size_t _length;
+    MmapLimiter* const _limiter;
+    const std::string _filename;
+    DISALLOW_COPY_AND_ASSIGN(Win32MmapReadableFile);
 };
 
 class Win32WritableFile : public WritableFile
@@ -194,6 +255,9 @@ public:
     virtual uint64_t NowMicros();
 
     virtual void SleepForMicroseconds(int micros);
+
+private:
+    MmapLimiter _mmapLimiter;
 };
 
 void ToWidePath(const std::string& value, std::wstring& target) {
@@ -306,6 +370,107 @@ size_t GetPageSize()
 }
 
 const size_t g_PageSize = GetPageSize();
+
+static bool IsWindowsX64Build()
+{
+#if defined(_WIN64) && (defined(_M_X64) || defined(__x86_64__))
+    return true;
+#else
+    return false;
+#endif
+}
+
+static bool IsBlockIndexTableFile(const std::string& filename)
+{
+    if (::InterlockedCompareExchange(&g_windows_block_index_mmap_enabled, 0, 0) == 0 ||
+        !IsWindowsX64Build()) {
+        return false;
+    }
+
+    std::string path = filename;
+    for (size_t i = 0; i < path.size(); ++i) {
+        unsigned char c = static_cast<unsigned char>(path[i]);
+        if (path[i] == '\\') {
+            path[i] = '/';
+        } else {
+            path[i] = static_cast<char>(std::tolower(c));
+        }
+    }
+
+    const std::string marker = "blocks/index/";
+    const size_t markerPos = path.rfind(marker);
+    if (markerPos == std::string::npos ||
+        (markerPos != 0 && path[markerPos - 1] != '/')) {
+        return false;
+    }
+
+    const std::string basename = path.substr(markerPos + marker.size());
+    if (basename.empty() || basename.find('/') != std::string::npos) {
+        return false;
+    }
+
+    const size_t dot = basename.rfind('.');
+    if (dot == std::string::npos) {
+        return false;
+    }
+    const std::string extension = basename.substr(dot);
+    return extension == ".ldb" || extension == ".sst";
+}
+
+MmapLimiter::MmapLimiter() : _allowed(IsWindowsX64Build() ? 1000 : 0)
+{
+}
+
+bool MmapLimiter::Acquire()
+{
+    _mu.Lock();
+    if (_allowed <= 0) {
+        _mu.Unlock();
+        return false;
+    }
+    --_allowed;
+    _mu.Unlock();
+    return true;
+}
+
+void MmapLimiter::Release()
+{
+    _mu.Lock();
+    ++_allowed;
+    _mu.Unlock();
+}
+
+Win32MmapReadableFile::Win32MmapReadableFile(
+    const std::string& fname, char* base, size_t length, MmapLimiter* limiter)
+    : _base(base), _length(length), _limiter(limiter), _filename(fname)
+{
+}
+
+Win32MmapReadableFile::~Win32MmapReadableFile()
+{
+    ::UnmapViewOfFile(_base);
+    _limiter->Release();
+}
+
+Status Win32MmapReadableFile::Read(
+    uint64_t offset, size_t n, Slice* result, char* scratch) const
+{
+    if (offset > static_cast<uint64_t>(_length)) {
+        *result = Slice();
+        ::SetLastError(ERROR_INVALID_PARAMETER);
+        return Status::IOError(_filename, Win32::GetLastErrSz());
+    }
+
+    const size_t mappedOffset = static_cast<size_t>(offset);
+    if (n > _length - mappedOffset) {
+        *result = Slice();
+        ::SetLastError(ERROR_INVALID_PARAMETER);
+        return Status::IOError(_filename, Win32::GetLastErrSz());
+    }
+
+    *result = Slice(_base + mappedOffset, n);
+    return Status::OK();
+}
 
 
 Win32SequentialFile::Win32SequentialFile( const std::string& fname ) :
@@ -809,7 +974,66 @@ Status Win32Env::NewRandomAccessFile( const std::string& fname, RandomAccessFile
 {
     Status sRet;
     std::string path = fname;
-    Win32RandomAccessFile* pFile = new Win32RandomAccessFile(ModifyPath(path));
+    ModifyPath(path);
+
+    if (IsBlockIndexTableFile(path)) {
+        ::InterlockedIncrement(&g_mmap_attempts);
+        if (_mmapLimiter.Acquire()) {
+            std::wstring wpath;
+            ToWidePath(path, wpath);
+            HANDLE hFile = ::CreateFileW(wpath.c_str(),
+                                         GENERIC_READ,
+                                         FILE_SHARE_READ,
+                                         NULL,
+                                         OPEN_EXISTING,
+                                         FILE_ATTRIBUTE_NORMAL,
+                                         NULL);
+            if (hFile != INVALID_HANDLE_VALUE) {
+                LARGE_INTEGER fileSize;
+                if (::GetFileSizeEx(hFile, &fileSize) &&
+                    fileSize.QuadPart > 0 &&
+                    static_cast<unsigned long long>(fileSize.QuadPart) <=
+                        static_cast<unsigned long long>(std::numeric_limits<size_t>::max())) {
+                    HANDLE hMapping = ::CreateFileMappingW(hFile,
+                                                           NULL,
+                                                           PAGE_READONLY,
+                                                           0,
+                                                           0,
+                                                           NULL);
+                    if (hMapping) {
+                        void* base = ::MapViewOfFile(hMapping, FILE_MAP_READ, 0, 0, 0);
+                        ::CloseHandle(hMapping);
+                        if (base) {
+                            ::CloseHandle(hFile);
+                            *result = new Win32MmapReadableFile(
+                                path,
+                                reinterpret_cast<char*>(base),
+                                static_cast<size_t>(fileSize.QuadPart),
+                                &_mmapLimiter);
+                            ::InterlockedIncrement(&g_mmap_mapped);
+                            return sRet;
+                        }
+                        ::InterlockedIncrement(&g_mmap_fallback_view);
+                    } else {
+                        ::InterlockedIncrement(&g_mmap_fallback_mapping);
+                    }
+                } else {
+                    ::InterlockedIncrement(&g_mmap_fallback_size);
+                }
+                ::CloseHandle(hFile);
+            } else {
+                ::InterlockedIncrement(&g_mmap_fallback_open);
+            }
+
+            // Mapping is an optimization only. Preserve the original ReadFile
+            // fallback on any mapping failure; free the reserved mapping slot.
+            _mmapLimiter.Release();
+        } else {
+            ::InterlockedIncrement(&g_mmap_fallback_limit);
+        }
+    }
+
+    Win32RandomAccessFile* pFile = new Win32RandomAccessFile(path);
     if(!pFile->isEnable()){
         delete pFile;
         *result = NULL;
