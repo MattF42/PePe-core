@@ -92,13 +92,41 @@ The same log has unrelated-looking nonfatal protocol warnings:
 Those did not prevent reaching the network tip or shutdown; their root
 causes were not investigated in this mmap review.
 
-**Build provenance boundary:** the log demonstrates an mmap-enabled Qt
-binary ran on Windows and is user-identified as PR #3, but does **not**
-itself include the executable SHA256, PE32+ build report or embedded
-commit identity. Cross-build provenance for exact clean-branch HEAD
-`f4b4ea30fe381bd2ce599aa55942e8411b3fc4a0` therefore still requires
-the corresponding builder report/hash before marking that separate gate
-independently verified.
+### 2026-10-14 isolated-branch build and artifact verification
+
+A separate `BUILD-REPORT.md` packaged with the Windows Qt build records:
+
+- **Cross-build PASS** from a clean `git archive` of
+  `f4b4ea30fe381bd2ce599aa55942e8411b3fc4a0` (the exact PR #3 source
+  HEAD at build time; later branch commits are documentation-only).
+- Ubuntu 24.04.5 / MinGW-w64 x86_64 GCC 13.2 / static Qt 5.5.0;
+  `make -C src -j4 qt/PEPEPOW_qt.exe` completed without compile/link errors.
+- PE32+ AMD64 Windows GUI binary, 46,493,259 bytes. The relevant Windows
+  mmap flag and summary-log strings are present.
+- The report's original “Windows runtime: NOT TESTED” refers to **build
+  time**. A subsequent user-operated Windows Qt test is documented above.
+
+The package resides on the independent
+[`artifacts/qt-pr3-f4b4ea30`](https://github.com/edisontw/PePe-core/tree/artifacts/qt-pr3-f4b4ea30)
+branch as `PEPEPOW-Qt-PR3-mmap-f4b4ea30.zip`.
+
+| Item | SHA256 | Evidence |
+| --- | --- | --- |
+| Published ZIP | `162456114734cc06f390e4fd330c8ce873affe9ef8aca63b57d367b58937ace0` | Published `SHA256SUMS.txt`; user's Windows PowerShell reported `PASS: PR3 ZIP SHA256 verified` |
+| `PEPEPOW_qt.exe` | `ed5bc158938516111e9a67ad85e3dcb2c8406e231a693e593844c81a57a96623` | Build report, packaged `SHA256SUMS.txt`, and Windows `Get-FileHash` match |
+| `BUILD-REPORT.md` | `3cf7e95f17b46b89cbeed0e49817bda26252cfe180c2714c46c568ef83ef0c1d` | Packaged `SHA256SUMS.txt`; independently checked against user-uploaded report |
+
+**Result:** the published ZIP integrity and extracted executable identity
+match the builder-supplied manifest and clean-source build report.
+This completes the **build/artifact provenance evidence gate** for maintainer
+review. The evidence is a verified chain of builder report, published ZIP
+checksum and user-computed hashes; it is not a separate reproducible-build
+comparison by a second compiler.
+
+The log itself does not embed its own executable hash, but the user
+supplied that run as the PR #3 Windows validation. No need to repeat
+startup, rescan, wallet, or full compaction testing solely for this
+artifact verification. There was no automated GitHub Actions CI run.
 
 **No speedup claim:** 186.49 seconds for the block-index stage in this
 run is consistent with the large variation previously observed; this
