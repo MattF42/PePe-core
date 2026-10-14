@@ -9,6 +9,9 @@
 #endif
 
 #include "init.h"
+#ifdef WIN32
+#include "leveldb/env.h"
+#endif
 
 #include "addrman.h"
 #include "amount.h"
@@ -551,6 +554,9 @@ std::string HelpMessage(HelpMessageMode mode)
         strUsage += HelpMessageOpt("-limitancestorsize=<n>", strprintf("Do not accept transactions whose size with all in-mempool ancestors exceeds <n> kilobytes (default: %u)", DEFAULT_ANCESTOR_SIZE_LIMIT));
         strUsage += HelpMessageOpt("-limitdescendantcount=<n>", strprintf("Do not accept transactions if any ancestor would have <n> or more in-mempool descendants (default: %u)", DEFAULT_DESCENDANT_LIMIT));
         strUsage += HelpMessageOpt("-limitdescendantsize=<n>", strprintf("Do not accept transactions if any ancestor would have more than <n> kilobytes of in-mempool descendants (default: %u).", DEFAULT_DESCENDANT_SIZE_LIMIT));
+#ifdef WIN32
+        strUsage += HelpMessageOpt("-winmmapblockindex", "Use experimental read-only mmap for blocks/index LevelDB .ldb/.sst reads; mapping failures fall back to ReadFile (default: 0)");
+#endif
     }
     string debugCategories = "addrman, alert, bench, coindb, db, http, leveldb, libevent, lock, mempool, mempoolrej, net, proxy, prune, rand, reindex, rpc, selectcoins, tor, zmq, "
                              "PEPEPOW (or specifically: gobject, instantsend, keepass, masternode, mnpayments, mnsync, privatesend, spork)"; // Don't translate these and qt below
@@ -1704,6 +1710,23 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         return false;
     }
     LogPrintf(" block index %15dms\n", GetTimeMillis() - nStart);
+#ifdef WIN32
+    if (GetBoolArg("-winmmapblockindex", false)) {
+        const leveldb::WindowsBlockIndexMmapStats stats = leveldb::GetWindowsBlockIndexMmapStats();
+        const uint64_t fallback = stats.fallback_limit + stats.fallback_open +
+                                  stats.fallback_size + stats.fallback_mapping + stats.fallback_view;
+        // One process-wide snapshot after block-index startup, not per SST/read.
+        LogPrintf("Windows block-index mmap summary: attempts=%llu mapped=%llu fallback=%llu (limit=%llu open=%llu size=%llu mapping=%llu view=%llu)\n",
+                  static_cast<unsigned long long>(stats.attempts),
+                  static_cast<unsigned long long>(stats.mapped),
+                  static_cast<unsigned long long>(fallback),
+                  static_cast<unsigned long long>(stats.fallback_limit),
+                  static_cast<unsigned long long>(stats.fallback_open),
+                  static_cast<unsigned long long>(stats.fallback_size),
+                  static_cast<unsigned long long>(stats.fallback_mapping),
+                  static_cast<unsigned long long>(stats.fallback_view));
+    }
+#endif
 
     boost::filesystem::path est_path = GetDataDir() / FEE_ESTIMATES_FILENAME;
     CAutoFile est_filein(fopen(est_path.string().c_str(), "rb"), SER_DISK, CLIENT_VERSION);
