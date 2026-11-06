@@ -23,6 +23,32 @@
 #include <iomanip>
 #include <univalue.h>
 
+// Look up the live collateral rather than relying on the cached masternode amount.
+// Caller must hold cs_main (GetCollateralAmount reads the UTXO set).
+static std::string GetMasternodeTierFromCollateral(const COutPoint& outpoint, int64_t* collateralPEPEW = nullptr)
+{
+    AssertLockHeld(cs_main);
+
+    int nUnusedAmount = 0; // GetCollateralAmount classifies via the return enum.
+    switch (CMasternode::GetCollateralAmount(outpoint, nUnusedAmount)) {
+        case CMasternode::COLLATERAL_10M:
+            if (collateralPEPEW) *collateralPEPEW = 10000000;
+            return "T1";
+        case CMasternode::COLLATERAL_25M:
+            if (collateralPEPEW) *collateralPEPEW = 25000000;
+            return "T2";
+        case CMasternode::COLLATERAL_50M:
+            if (collateralPEPEW) *collateralPEPEW = 50000000;
+            return "T3";
+        case CMasternode::COLLATERAL_100M:
+            if (collateralPEPEW) *collateralPEPEW = 100000000;
+            return "T4";
+        default:
+            if (collateralPEPEW) *collateralPEPEW = 0;
+            return "unknown";
+    }
+}
+
 #ifdef ENABLE_WALLET
 void EnsureWalletIsUnlocked();
 
@@ -397,32 +423,11 @@ UniValue masternode(const UniValue& params, bool fHelp)
             mnObj.push_back(Pair("payee", CBitcoinAddress(mn.pubKeyCollateralAddress.GetID()).ToString()));
         }
 
-        // Derive the tier from the live collateral UTXO, not cached masternode data.
-        std::string strTier = "unknown";
+        std::string strTier;
         int64_t nCollateralPEPEW = 0;
         {
             LOCK(cs_main);
-            int nUnusedAmount = 0; // GetCollateralAmount reports the tier via its return value.
-            switch (CMasternode::GetCollateralAmount(activeMasternode.outpoint, nUnusedAmount)) {
-                case CMasternode::COLLATERAL_10M:
-                    strTier = "T1";
-                    nCollateralPEPEW = 10000000;
-                    break;
-                case CMasternode::COLLATERAL_25M:
-                    strTier = "T2";
-                    nCollateralPEPEW = 25000000;
-                    break;
-                case CMasternode::COLLATERAL_50M:
-                    strTier = "T3";
-                    nCollateralPEPEW = 50000000;
-                    break;
-                case CMasternode::COLLATERAL_100M:
-                    strTier = "T4";
-                    nCollateralPEPEW = 100000000;
-                    break;
-                default:
-                    break;
-            }
+            strTier = GetMasternodeTierFromCollateral(activeMasternode.outpoint, &nCollateralPEPEW);
         }
 
         mnObj.push_back(Pair("status", activeMasternode.GetStatus()));
@@ -511,6 +516,7 @@ UniValue masternodelist(const UniValue& params, bool fHelp)
                 "  protocol       - Print protocol of a masternode (can be additionally filtered, exact match)\n"
                 "  pubkey         - Print the masternode (not collateral) public key\n"
                 "  rank           - Print rank of a masternode based on current block\n"
+                "  tier           - Print collateral tier (T1-T4 or unknown) for each masternode\\n"
                 "  status         - Print masternode status: PRE_ENABLED / ENABLED / EXPIRED / WATCHDOG_EXPIRED / NEW_START_REQUIRED /\n"
                 "                   UPDATE_REQUIRED / POSE_BAN / OUTPOINT_SPENT (can be additionally filtered, partial match)\n"
                 );
@@ -599,6 +605,14 @@ UniValue masternodelist(const UniValue& params, bool fHelp)
             } else if (strMode == "pubkey") {
                 if (strFilter !="" && strOutpoint.find(strFilter) == std::string::npos) continue;
                 obj.push_back(Pair(strOutpoint, HexStr(mn.pubKeyMasternode)));
+            } else if (strMode == "tier") {
+                if (strFilter != "" && strOutpoint.find(strFilter) == std::string::npos) continue;
+                std::string strTier;
+                {
+                    LOCK(cs_main);
+                    strTier = GetMasternodeTierFromCollateral(mnpair.first);
+                }
+                obj.push_back(Pair(strOutpoint, strTier));
             } else if (strMode == "status") {
                 std::string strStatus = mn.GetStatus();
                 if (strFilter !="" && strStatus.find(strFilter) == std::string::npos &&
