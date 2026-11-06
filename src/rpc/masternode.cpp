@@ -491,7 +491,7 @@ UniValue masternodelist(const UniValue& params, bool fHelp)
                 strMode != "activeseconds" && strMode != "addr" && strMode != "full" && strMode != "info" &&
                 strMode != "lastseen" && strMode != "lastpaidtime" && strMode != "lastpaidblock" &&
                 strMode != "protocol" && strMode != "payee" && strMode != "pubkey" &&
-                strMode != "rank" && strMode != "status"))
+                strMode != "rank" && strMode != "status" && strMode != "tier"))
     {
         throw std::runtime_error(
                 "masternodelist ( \"mode\" \"filter\" )\n"
