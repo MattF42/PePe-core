@@ -141,7 +141,7 @@ UniValue masternode(const UniValue& params, bool fHelp)
                 "  start-alias  - Start single remote masternode by assigned alias configured in masternode.conf\n"
                 "  start-<mode> - Start remote masternodes configured in masternode.conf (<mode>: 'all', 'missing', 'disabled')\n"
 #endif // ENABLE_WALLET
-                "  status       - Print masternode status information\n"
+                "  status       - Print masternode status information, including tier and collateral\n"
                 "  list         - Print list of all known masternodes (see masternodelist for more info)\n"
                 "  list-conf    - Print masternode.conf in JSON format\n"
                 "  winner       - Print info on next masternode winner to vote for\n"
@@ -397,7 +397,41 @@ UniValue masternode(const UniValue& params, bool fHelp)
             mnObj.push_back(Pair("payee", CBitcoinAddress(mn.pubKeyCollateralAddress.GetID()).ToString()));
         }
 
+        // Derive the tier from the live collateral UTXO, not cached masternode data.
+        std::string strTier = "unknown";
+        int64_t nCollateralPEPEW = 0;
+        {
+            LOCK(cs_main);
+            int nUnusedAmount = 0; // GetCollateralAmount reports the tier via its return value.
+            switch (CMasternode::GetCollateralAmount(activeMasternode.outpoint, nUnusedAmount)) {
+                case CMasternode::COLLATERAL_10M:
+                    strTier = "T1";
+                    nCollateralPEPEW = 10000000;
+                    break;
+                case CMasternode::COLLATERAL_25M:
+                    strTier = "T2";
+                    nCollateralPEPEW = 25000000;
+                    break;
+                case CMasternode::COLLATERAL_50M:
+                    strTier = "T3";
+                    nCollateralPEPEW = 50000000;
+                    break;
+                case CMasternode::COLLATERAL_100M:
+                    strTier = "T4";
+                    nCollateralPEPEW = 100000000;
+                    break;
+                default:
+                    break;
+            }
+        }
+
         mnObj.push_back(Pair("status", activeMasternode.GetStatus()));
+        mnObj.push_back(Pair("tier", strTier));
+        if (nCollateralPEPEW != 0) {
+            mnObj.push_back(Pair("collateral", nCollateralPEPEW));
+        } else {
+            mnObj.push_back(Pair("collateral", NullUniValue));
+        }
         return mnObj;
     }
 
