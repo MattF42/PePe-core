@@ -6,6 +6,7 @@
 #include "init.h"
 #include "guiutil.h"
 #include "masternode-sync.h"
+#include "masternode.h"
 #include "masternodeconfig.h"
 #include "masternodeman.h"
 #include "sync.h"
@@ -14,6 +15,20 @@
 
 #include <QTimer>
 #include <QMessageBox>
+
+// Resolve the tier from the collateral UTXO; stale cached values are not authoritative.
+static QString GetMasternodeTierDisplay(const COutPoint& outpoint)
+{
+    LOCK(cs_main);
+    int nUnusedAmount = 0; // Classification is returned as a CollateralStatus enum.
+    switch (CMasternode::GetCollateralAmount(outpoint, nUnusedAmount)) {
+        case CMasternode::COLLATERAL_10M: return "T1";
+        case CMasternode::COLLATERAL_25M: return "T2";
+        case CMasternode::COLLATERAL_50M: return "T3";
+        case CMasternode::COLLATERAL_100M: return "T4";
+        default: return "unknown";
+    }
+}
 
 int GetOffsetFromUtc()
 {
@@ -49,12 +64,14 @@ MasternodeList::MasternodeList(const PlatformStyle *platformStyle, QWidget *pare
     ui->tableWidgetMyMasternodes->setColumnWidth(3, columnStatusWidth);
     ui->tableWidgetMyMasternodes->setColumnWidth(4, columnActiveWidth);
     ui->tableWidgetMyMasternodes->setColumnWidth(5, columnLastSeenWidth);
+    ui->tableWidgetMyMasternodes->setColumnWidth(6, 65); // Tier
 
     ui->tableWidgetMasternodes->setColumnWidth(0, columnAddressWidth);
     ui->tableWidgetMasternodes->setColumnWidth(1, columnProtocolWidth);
     ui->tableWidgetMasternodes->setColumnWidth(2, columnStatusWidth);
     ui->tableWidgetMasternodes->setColumnWidth(3, columnActiveWidth);
     ui->tableWidgetMasternodes->setColumnWidth(4, columnLastSeenWidth);
+    ui->tableWidgetMasternodes->setColumnWidth(5, 65); // Tier
 
     ui->tableWidgetMyMasternodes->setContextMenuPolicy(Qt::CustomContextMenu);
 
@@ -209,6 +226,7 @@ void MasternodeList::updateMyMasternodeInfo(QString strAlias, QString strAddr, c
     QTableWidgetItem *lastSeenItem = new QTableWidgetItem(QString::fromStdString(DateTimeStrFormat("%Y-%m-%d %H:%M",
                                                                                                    fFound ? infoMn.nTimeLastPing + GetOffsetFromUtc() : 0)));
     QTableWidgetItem *pubkeyItem = new QTableWidgetItem(QString::fromStdString(fFound ? CBitcoinAddress(infoMn.pubKeyCollateralAddress.GetID()).ToString() : ""));
+    QTableWidgetItem *tierItem = new QTableWidgetItem(GetMasternodeTierDisplay(outpoint));
 
     ui->tableWidgetMyMasternodes->setItem(nNewRow, 0, aliasItem);
     ui->tableWidgetMyMasternodes->setItem(nNewRow, 1, addrItem);
@@ -216,7 +234,8 @@ void MasternodeList::updateMyMasternodeInfo(QString strAlias, QString strAddr, c
     ui->tableWidgetMyMasternodes->setItem(nNewRow, 3, statusItem);
     ui->tableWidgetMyMasternodes->setItem(nNewRow, 4, activeSecondsItem);
     ui->tableWidgetMyMasternodes->setItem(nNewRow, 5, lastSeenItem);
-    ui->tableWidgetMyMasternodes->setItem(nNewRow, 6, pubkeyItem);
+    ui->tableWidgetMyMasternodes->setItem(nNewRow, 6, tierItem);
+    ui->tableWidgetMyMasternodes->setItem(nNewRow, 7, pubkeyItem);
 }
 
 void MasternodeList::updateMyNodeList(bool fForce)
@@ -293,6 +312,7 @@ void MasternodeList::updateNodeList()
         QTableWidgetItem *activeSecondsItem = new QTableWidgetItem(QString::fromStdString(DurationToDHMS(mn.lastPing.sigTime - mn.sigTime)));
         QTableWidgetItem *lastSeenItem = new QTableWidgetItem(QString::fromStdString(DateTimeStrFormat("%Y-%m-%d %H:%M", mn.lastPing.sigTime + offsetFromUtc)));
         QTableWidgetItem *pubkeyItem = new QTableWidgetItem(QString::fromStdString(CBitcoinAddress(mn.pubKeyCollateralAddress.GetID()).ToString()));
+        QTableWidgetItem *tierItem = new QTableWidgetItem(GetMasternodeTierDisplay(mnpair.first));
 
         if (strCurrentFilter != "")
         {
@@ -301,6 +321,7 @@ void MasternodeList::updateNodeList()
                             statusItem->text() + " " +
                             activeSecondsItem->text() + " " +
                             lastSeenItem->text() + " " +
+                            tierItem->text() + " " +
                             pubkeyItem->text();
             if (!strToFilter.contains(strCurrentFilter)) continue;
         }
@@ -311,7 +332,8 @@ void MasternodeList::updateNodeList()
         ui->tableWidgetMasternodes->setItem(0, 2, statusItem);
         ui->tableWidgetMasternodes->setItem(0, 3, activeSecondsItem);
         ui->tableWidgetMasternodes->setItem(0, 4, lastSeenItem);
-        ui->tableWidgetMasternodes->setItem(0, 5, pubkeyItem);
+        ui->tableWidgetMasternodes->setItem(0, 5, tierItem);
+        ui->tableWidgetMasternodes->setItem(0, 6, pubkeyItem);
     }
 
     ui->countLabel->setText(QString::number(ui->tableWidgetMasternodes->rowCount()));
