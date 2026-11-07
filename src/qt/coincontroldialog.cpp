@@ -338,7 +338,7 @@ void CoinControlDialog::buttonConsolidateClicked()
     const int optimisticRounds = (int)((snapshot.size() + 497) / 499);
     const int unit = model->getOptionsModel()->getDisplayUnit();
     QString preview = tr("Merge %1 confirmed, spendable UTXOs into a wallet-owned address.\n\n")
-        .arg(snapshot.size());
+        .arg(static_cast<qulonglong>(snapshot.size()));
     preview += tr("Destination: %1\n").arg(QString::fromStdString(CBitcoinAddress(target).ToString()));
     preview += tr("Estimated transactions: %1–%2 (depending on actual signed size).\n")
         .arg(optimisticRounds).arg(budgetRounds);
@@ -417,7 +417,7 @@ void CoinControlDialog::launchConsolidationBatch()
 
     if (consolidationProgress)
         consolidationProgress->setLabelText(tr("Creating transaction %1 (up to %2 inputs)...")
-                                           .arg(consolidationTxCount + 1).arg(inputs.size()));
+                                           .arg(consolidationTxCount + 1).arg(static_cast<qulonglong>(inputs.size())));
     QThreadPool::globalInstance()->start(new ConsolidationBatchWork(
         this, pwalletMain, inputs, consolidationDestination,
         std::min(consolidationBatchFeeCap, consolidationFeeBudget - consolidationFees)));
