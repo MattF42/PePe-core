@@ -493,9 +493,14 @@ void CoinControlDialog::consolidationPause()
 {
     // Never cancel/retry an in-flight transaction. Only stop future batches.
     consolidationPaused = true;
-    if (consolidationProgress)
+    if (consolidationProgress) {
+        consolidationProgress->setCancelButton(0);
         consolidationProgress->setLabelText(
             tr("Pause requested. Waiting for the current transaction or confirmation."));
+        // QProgressDialog::cancel hides the dialog. Show status again once
+        // the cancel signal has finished, with no further cancel button.
+        QTimer::singleShot(0, consolidationProgress, SLOT(show()));
+    }
 }
 
 void CoinControlDialog::finishConsolidation(const QString& details, bool complete)
