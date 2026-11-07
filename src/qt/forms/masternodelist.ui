@@ -292,6 +292,16 @@
             </widget>
            </item>
            <item>
+            <widget class="QPushButton" name="refreshAllButton">
+             <property name="toolTip">
+              <string>Refresh from the local masternode list; does not download new masternode data.</string>
+             </property>
+             <property name="text">
+              <string>Refresh</string>
+             </property>
+            </widget>
+           </item>
+           <item>
             <spacer name="horizontalSpacer_3">
              <property name="orientation">
               <enum>Qt::Horizontal</enum>

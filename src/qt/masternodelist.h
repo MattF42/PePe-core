@@ -52,6 +52,8 @@ public Q_SLOTS:
 Q_SIGNALS:
 
 private:
+    void refreshNodeList(bool fForce);
+
     QTimer *timer;
     Ui::MasternodeList *ui;
     ClientModel *clientModel;
@@ -67,11 +69,13 @@ private:
 
 private Q_SLOTS:
     void showContextMenu(const QPoint &);
+    void showAllMasternodesContextMenu(const QPoint &);
     void on_filterLineEdit_textChanged(const QString &strFilterIn);
     void on_startButton_clicked();
     void on_startAllButton_clicked();
     void on_startMissingButton_clicked();
     void on_tableWidgetMyMasternodes_itemSelectionChanged();
     void on_UpdateButton_clicked();
+    void on_refreshAllButton_clicked();
 };
 #endif // MASTERNODELIST_H

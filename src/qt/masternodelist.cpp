@@ -13,6 +13,8 @@
 #include "wallet/wallet.h"
 #include "walletmodel.h"
 
+#include <QApplication>
+#include <QClipboard>
 #include <QTimer>
 #include <QMessageBox>
 
@@ -81,6 +83,9 @@ MasternodeList::MasternodeList(const PlatformStyle *platformStyle, QWidget *pare
     connect(ui->tableWidgetMyMasternodes, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(showContextMenu(const QPoint&)));
     connect(startAliasAction, SIGNAL(triggered()), this, SLOT(on_startButton_clicked()));
 
+    ui->tableWidgetMasternodes->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(ui->tableWidgetMasternodes, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(showAllMasternodesContextMenu(const QPoint&)));
+
     timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(updateNodeList()));
     connect(timer, SIGNAL(timeout()), this, SLOT(updateMyNodeList()));
@@ -114,6 +119,37 @@ void MasternodeList::showContextMenu(const QPoint &point)
 {
     QTableWidgetItem *item = ui->tableWidgetMyMasternodes->itemAt(point);
     if(item) contextMenu->exec(QCursor::pos());
+}
+
+void MasternodeList::showAllMasternodesContextMenu(const QPoint &point)
+{
+    QTableWidgetItem *clickedItem = ui->tableWidgetMasternodes->itemAt(point);
+    if(!clickedItem) return;
+
+    const int row = clickedItem->row();
+    QTableWidgetItem *endpointItem = ui->tableWidgetMasternodes->item(row, 0);
+    QTableWidgetItem *payeeItem = ui->tableWidgetMasternodes->item(row, ui->tableWidgetMasternodes->columnCount() - 1);
+    if(!endpointItem) return;
+
+    const QString ip = endpointItem->data(Qt::UserRole).toString();
+    const QString endpoint = endpointItem->text();
+    const QString payee = payeeItem ? payeeItem->text() : QString();
+
+    QMenu menu(this);
+    QAction *copyIpAction = menu.addAction(tr("Copy IP"));
+    QAction *copyEndpointAction = menu.addAction(tr("Copy IP:Port"));
+    QAction *copyPayeeAction = menu.addAction(tr("Copy Payee Address"));
+    copyIpAction->setEnabled(!ip.isEmpty());
+    copyEndpointAction->setEnabled(!endpoint.isEmpty());
+    copyPayeeAction->setEnabled(!payee.isEmpty());
+
+    QAction *selectedAction = menu.exec(ui->tableWidgetMasternodes->viewport()->mapToGlobal(point));
+    if(selectedAction == copyIpAction)
+        QApplication::clipboard()->setText(ip);
+    else if(selectedAction == copyEndpointAction)
+        QApplication::clipboard()->setText(endpoint);
+    else if(selectedAction == copyPayeeAction)
+        QApplication::clipboard()->setText(payee);
 }
 
 void MasternodeList::StartAlias(std::string strAlias)
@@ -271,6 +307,11 @@ void MasternodeList::updateMyNodeList(bool fForce)
 
 void MasternodeList::updateNodeList()
 {
+    refreshNodeList(false);
+}
+
+void MasternodeList::refreshNodeList(bool fForce)
+{
     TRY_LOCK(cs_mnlist, fLockAcquired);
     if(!fLockAcquired) {
         return;
@@ -285,7 +326,7 @@ void MasternodeList::updateNodeList()
                             : nTimeListUpdated - GetTime() + MASTERNODELIST_UPDATE_SECONDS;
 
     if(fFilterUpdated) ui->countLabel->setText(QString::fromStdString(strprintf("Please wait... %d", nSecondsToWait)));
-    if(nSecondsToWait > 0) return;
+    if(nSecondsToWait > 0 && !fForce) return;
 
     nTimeListUpdated = GetTime();
     fFilterUpdated = false;
@@ -304,6 +345,7 @@ void MasternodeList::updateNodeList()
         // populate list
         // Address, Protocol, Status, Active Seconds, Last Seen, Pub Key
         QTableWidgetItem *addressItem = new QTableWidgetItem(QString::fromStdString(mn.addr.ToString()));
+        addressItem->setData(Qt::UserRole, QString::fromStdString(mn.addr.ToStringIP(false)));
         QTableWidgetItem *protocolItem = new QTableWidgetItem(QString::number(mn.nProtocolVersion));
         QTableWidgetItem *statusItem = new QTableWidgetItem(QString::fromStdString(mn.GetStatus()));
         statusItem->setToolTip(masternodeSync.IsMasternodeListSynced()
@@ -450,4 +492,9 @@ void MasternodeList::on_tableWidgetMyMasternodes_itemSelectionChanged()
 void MasternodeList::on_UpdateButton_clicked()
 {
     updateMyNodeList(true);
+}
+
+void MasternodeList::on_refreshAllButton_clicked()
+{
+    refreshNodeList(true);
 }
