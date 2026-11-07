@@ -6,6 +6,9 @@
 #define BITCOIN_QT_COINCONTROLDIALOG_H
 
 #include "amount.h"
+#include "primitives/transaction.h"
+#include "walletmodel.h"
+#include <vector>
 
 #include <QAbstractButton>
 #include <QAction>
@@ -21,6 +24,8 @@ class WalletModel;
 
 class CCoinControl;
 class CTxMemPool;
+class QProgressDialog;
+class QTimer;
 
 namespace Ui {
     class CoinControlDialog;
@@ -46,6 +51,9 @@ public:
     static CCoinControl *coinControl;
     static bool fSubtractFeeFromAmount;
 
+protected:
+    void done(int result) override;
+
 private:
     Ui::CoinControlDialog *ui;
     WalletModel *model;
@@ -59,6 +67,29 @@ private:
     QAction *unlockAction;
 
     const PlatformStyle *platformStyle;
+
+    // Auto-consolidation state is owned by this modal dialog; only one job
+    // can execute at a time, and normal manual Coin Control remains separate.
+    bool consolidationRunning;
+    bool consolidationWaiting;
+    bool consolidationPaused;
+    bool consolidationHasCarry;
+    int consolidationInitial;
+    int consolidationProcessed;
+    int consolidationTxCount;
+    int consolidationPolls;
+    CAmount consolidationFees;
+    CAmount consolidationFeeBudget;
+    CAmount consolidationBatchFeeCap;
+    COutPoint consolidationCarry;
+    CTxDestination consolidationDestination;
+    std::vector<COutPoint> consolidationPending;
+    QTimer *consolidationTimer;
+    QProgressDialog *consolidationProgress;
+    WalletModel::UnlockContext *consolidationUnlock;
+
+    void launchConsolidationBatch();
+    void finishConsolidation(const QString& details, bool complete);
 
     QString strPad(QString, int, QString);
     void sortView(int, Qt::SortOrder);
@@ -121,6 +152,10 @@ private Q_SLOTS:
     void headerSectionClicked(int);
     void buttonBoxClicked(QAbstractButton*);
     void buttonSelectAllClicked();
+    void buttonConsolidateClicked();
+    void consolidationBatchFinished(QString txid, QString error, qlonglong fee, int usedInputs);
+    void consolidationPollConfirmation();
+    void consolidationPause();
     void buttonToggleLockClicked();
     void updateLabelLocked();
 };

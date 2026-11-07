@@ -16,6 +16,7 @@
 
 #include "coincontrol.h"
 #include "init.h"
+#include "net.h"
 #include "validation.h" // For minRelayTxFee
 #include "wallet/wallet.h"
 
@@ -24,6 +25,14 @@
 
 #include <boost/assign/list_of.hpp> // for 'map_list_of()'
 #include <set>
+#include <algorithm>
+#include <QMetaObject>
+#include <QPointer>
+#include <QProgressDialog>
+#include <QRunnable>
+#include <QThreadPool>
+#include <QTimer>
+#include <QMessageBox>
 
 #include <QApplication>
 #include <QCheckBox>
@@ -40,11 +49,84 @@ QList<CAmount> CoinControlDialog::payAmounts;
 CCoinControl* CoinControlDialog::coinControl = new CCoinControl();
 bool CoinControlDialog::fSubtractFeeFromAmount = false;
 
+// One bounded signing/broadcast job runs off the GUI event loop. All the
+// actual input validation, signed-size checks and fee limits live in CWallet.
+class ConsolidationBatchWork : public QRunnable
+{
+public:
+    ConsolidationBatchWork(CoinControlDialog *receiver, CWallet *wallet,
+                           const std::vector<COutPoint>& inputs,
+                           const CTxDestination& target, CAmount feeCap)
+        : receiver(receiver), wallet(wallet), inputs(inputs),
+          destination(target), feeCap(feeCap) {}
+
+    void run() override
+    {
+        QString txid, error;
+        qlonglong feeValue = 0;
+        int used = 0;
+        unsigned int count = inputs.size();
+        while (count >= 2) {
+            std::vector<COutPoint> batch(inputs.begin(), inputs.begin() + count);
+            CWalletTx tx;
+            CReserveKey reservekey(wallet);
+            CAmount fee = 0;
+            std::string reason;
+            if (wallet->CreateConsolidationTransaction(batch, destination, tx,
+                    reservekey, fee, reason, feeCap)) {
+                // A rejected transaction is never retried after CommitTransaction.
+                if (!wallet->CommitTransaction(tx, reservekey, g_connman.get(),
+                                               NetMsgType::TX)) {
+                    error = QString::fromLatin1("Transaction rejected; check wallet and network state. No automatic retry.");
+                    break;
+                }
+                txid = QString::fromStdString(tx.GetHash().GetHex());
+                feeValue = fee;
+                used = count;
+                break;
+            }
+            // Try fewer inputs only before any transaction was broadcast.
+            // This also handles signed sizes larger than legacy estimates.
+            if (count == 2) {
+                error = QString::fromStdString(reason);
+                break;
+            }
+            count = std::max(2u, count / 2);
+        }
+
+        if (receiver)
+            QMetaObject::invokeMethod(receiver.data(), "consolidationBatchFinished",
+                Qt::QueuedConnection, Q_ARG(QString, txid), Q_ARG(QString, error),
+                Q_ARG(qlonglong, feeValue), Q_ARG(int, used));
+    }
+
+private:
+    QPointer<CoinControlDialog> receiver;
+    CWallet *wallet;
+    std::vector<COutPoint> inputs;
+    CTxDestination destination;
+    CAmount feeCap;
+};
+
 CoinControlDialog::CoinControlDialog(const PlatformStyle *platformStyle, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::CoinControlDialog),
     model(0),
-    platformStyle(platformStyle)
+    platformStyle(platformStyle),
+    consolidationRunning(false),
+    consolidationWaiting(false),
+    consolidationPaused(false),
+    consolidationHasCarry(false),
+    consolidationInitial(0),
+    consolidationProcessed(0),
+    consolidationTxCount(0),
+    consolidationPolls(0),
+    consolidationFees(0),
+    consolidationFeeBudget(0),
+    consolidationBatchFeeCap(0),
+    consolidationTimer(new QTimer(this)),
+    consolidationProgress(0),
+    consolidationUnlock(0)
 {
     ui->setupUi(this);
     
@@ -123,6 +205,8 @@ CoinControlDialog::CoinControlDialog(const PlatformStyle *platformStyle, QWidget
 
     // (un)select all
     connect(ui->pushButtonSelectAll, SIGNAL(clicked()), this, SLOT(buttonSelectAllClicked()));
+    connect(ui->pushButtonConsolidate, SIGNAL(clicked()), this, SLOT(buttonConsolidateClicked()));
+    connect(consolidationTimer, SIGNAL(timeout()), this, SLOT(consolidationPollConfirmation()));
 
     // Toggle lock state
     connect(ui->pushButtonToggleLock, SIGNAL(clicked()), this, SLOT(buttonToggleLockClicked()));
@@ -161,7 +245,18 @@ CoinControlDialog::~CoinControlDialog()
     settings.setValue("nCoinControlSortColumn", sortColumn);
     settings.setValue("nCoinControlSortOrder", (int)sortOrder);
 
+    delete consolidationUnlock;
     delete ui;
+}
+
+void CoinControlDialog::done(int result)
+{
+    if (consolidationRunning) {
+        QMessageBox::information(this, tr("Consolidation in progress"),
+            tr("Pause the job and let the current transaction finish before closing Coin Selection."));
+        return;
+    }
+    QDialog::done(result);
 }
 
 void CoinControlDialog::setModel(WalletModel *model)
@@ -190,6 +285,233 @@ void CoinControlDialog::buttonBoxClicked(QAbstractButton* button)
 {
     if (ui->buttonBox->buttonRole(button) == QDialogButtonBox::AcceptRole)
         done(QDialog::Accepted); // closes the dialog
+}
+
+
+void CoinControlDialog::buttonConsolidateClicked()
+{
+    if (consolidationRunning || !model || !pwalletMain)
+        return;
+
+    std::vector<COutput> outputs;
+    std::vector<std::pair<CAmount, COutPoint> > snapshot;
+    CTxDestination target;
+    {
+        LOCK2(cs_main, pwalletMain->cs_wallet);
+        pwalletMain->AvailableConsolidationCoins(outputs);
+        BOOST_FOREACH(const COutput& out, outputs) {
+            snapshot.push_back(std::make_pair(
+                out.tx->vout[out.i].nValue, COutPoint(out.tx->GetHash(), out.i)));
+        }
+        if (outputs.size() > 0)
+            ExtractDestination(outputs[0].tx->vout[outputs[0].i].scriptPubKey, target);
+    }
+
+    if (snapshot.size() < 2) {
+        QMessageBox::information(this, tr("Consolidate UTXOs"),
+            tr("Fewer than two confirmed, eligible UTXOs are available."));
+        return;
+    }
+    std::sort(snapshot.begin(), snapshot.end());
+    consolidationPending.clear();
+    for (const auto& item : snapshot)
+        consolidationPending.push_back(item.second);
+    consolidationDestination = target;
+
+    // The fee authorization is intentionally bounded. At 80 kB, even 200
+    // legacy inputs fit in typical transactions; actual signed size is
+    // checked independently, and lower batches stop at the fixed budget.
+    consolidationBatchFeeCap = std::min<CAmount>(maxTxFee,
+        std::max<CAmount>(COIN / 5, 2 * pwalletMain->GetRequiredFee(80000)));
+    const int budgetRounds = (int)((snapshot.size() + 197) / 199);
+    if (consolidationBatchFeeCap <= 0 ||
+        budgetRounds > 0 && consolidationBatchFeeCap > MAX_MONEY / budgetRounds) {
+        QMessageBox::warning(this, tr("Consolidate UTXOs"),
+            tr("Cannot calculate a safe consolidation fee budget."));
+        return;
+    }
+    consolidationFeeBudget = consolidationBatchFeeCap * budgetRounds;
+    const int optimisticRounds = (int)((snapshot.size() + 497) / 499);
+    const int unit = model->getOptionsModel()->getDisplayUnit();
+    QString preview = tr("Merge %1 confirmed, spendable UTXOs into a wallet-owned address.\n\n")
+        .arg(snapshot.size());
+    preview += tr("Destination: %1\n").arg(QString::fromStdString(CBitcoinAddress(target).ToString()));
+    preview += tr("Estimated transactions: %1–%2 (depending on actual signed size).\n")
+        .arg(optimisticRounds).arg(budgetRounds);
+    preview += tr("Maximum authorized total fee: %1\n\n")
+        .arg(BitcoinUnits::formatWithUnit(unit, consolidationFeeBudget));
+    preview += tr("Locked, immature, unconfirmed, PrivateSend and collateral outputs are excluded. "
+                  "The operation covers eligible wallet outputs, not the currently checked inputs. "
+                  "Each transaction is confirmed before the next one starts. This can take several blocks. "
+                  "No ambiguous broadcast is retried.");
+    if (QMessageBox::question(this, tr("Confirm automatic consolidation"),
+        preview, QMessageBox::Yes | QMessageBox::Cancel, QMessageBox::Cancel)
+        != QMessageBox::Yes)
+        return;
+
+    // Keep one unlock context across the approved session; it restores the
+    // wallet's prior locked state when the job completes or safely pauses.
+    WalletModel::UnlockContext unlock(model->requestUnlock());
+    if (!unlock.isValid())
+        return;
+    consolidationUnlock = new WalletModel::UnlockContext(unlock);
+    consolidationRunning = true;
+    consolidationWaiting = false;
+    consolidationPaused = false;
+    consolidationHasCarry = false;
+    consolidationInitial = snapshot.size();
+    consolidationProcessed = 0;
+    consolidationTxCount = 0;
+    consolidationPolls = 0;
+    consolidationFees = 0;
+    ui->pushButtonConsolidate->setEnabled(false);
+    ui->treeWidget->setEnabled(false);
+
+    if (consolidationProgress) {
+        consolidationProgress->deleteLater();
+        consolidationProgress = 0;
+    }
+    consolidationProgress = new QProgressDialog(
+        tr("Preparing first consolidation batch..."),
+        tr("Pause after current batch"), 0, consolidationInitial, this);
+    consolidationProgress->setWindowTitle(tr("Consolidating UTXOs"));
+    consolidationProgress->setAutoClose(false);
+    consolidationProgress->setAutoReset(false);
+    consolidationProgress->setMinimumDuration(0);
+    connect(consolidationProgress, SIGNAL(canceled()), this, SLOT(consolidationPause()));
+    consolidationProgress->show();
+    launchConsolidationBatch();
+}
+
+void CoinControlDialog::launchConsolidationBatch()
+{
+    if (!consolidationRunning || consolidationWaiting)
+        return;
+    if (consolidationPaused) {
+        finishConsolidation(tr("Paused after the last completed batch."), false);
+        return;
+    }
+    if (consolidationPending.empty()) {
+        finishConsolidation(tr("All eligible UTXOs were consolidated."), true);
+        return;
+    }
+
+    std::vector<COutPoint> inputs;
+    if (consolidationHasCarry)
+        inputs.push_back(consolidationCarry);
+    for (size_t i = 0; i < consolidationPending.size() && inputs.size() < 500; ++i)
+        inputs.push_back(consolidationPending[i]);
+    if (inputs.size() < 2) {
+        finishConsolidation(tr("Fewer than two inputs remain."), true);
+        return;
+    }
+    if (consolidationFees >= consolidationFeeBudget) {
+        finishConsolidation(tr("Authorized fee budget exhausted; no further broadcasts."), false);
+        return;
+    }
+
+    if (consolidationProgress)
+        consolidationProgress->setLabelText(tr("Creating transaction %1 (up to %2 inputs)...")
+                                           .arg(consolidationTxCount + 1).arg(inputs.size()));
+    QThreadPool::globalInstance()->start(new ConsolidationBatchWork(
+        this, pwalletMain, inputs, consolidationDestination,
+        std::min(consolidationBatchFeeCap, consolidationFeeBudget - consolidationFees)));
+}
+
+void CoinControlDialog::consolidationBatchFinished(QString txid, QString error,
+                                                     qlonglong fee, int usedInputs)
+{
+    if (!consolidationRunning)
+        return;
+    if (txid.isEmpty() || !error.isEmpty() || usedInputs < 2 || fee <= 0) {
+        finishConsolidation(tr("Batch stopped: %1").arg(error.isEmpty()
+                            ? tr("No transaction broadcast") : error), false);
+        return;
+    }
+
+    const int consumed = usedInputs - (consolidationHasCarry ? 1 : 0);
+    if (consumed < 1 || (size_t)consumed > consolidationPending.size() ||
+        fee > consolidationFeeBudget - consolidationFees) {
+        finishConsolidation(tr("Batch bookkeeping or fee budget mismatch; inspect transaction %1.")
+                            .arg(txid), false);
+        return;
+    }
+
+    consolidationPending.erase(consolidationPending.begin(),
+                               consolidationPending.begin() + consumed);
+    consolidationProcessed += consumed;
+    consolidationFees += fee;
+    consolidationTxCount++;
+    consolidationCarry = COutPoint(uint256S(txid.toStdString()), 0);
+    consolidationHasCarry = true;
+    consolidationWaiting = true;
+    consolidationPolls = 0;
+    if (consolidationProgress) {
+        consolidationProgress->setValue(consolidationProcessed);
+        consolidationProgress->setLabelText(
+            tr("Transaction %1 broadcast: %2\nWaiting for confirmation before continuing...")
+            .arg(consolidationTxCount).arg(txid));
+    }
+    consolidationTimer->start(20000);
+}
+
+void CoinControlDialog::consolidationPollConfirmation()
+{
+    if (!consolidationRunning || !consolidationWaiting)
+        return;
+    bool confirmed = false;
+    {
+        LOCK2(cs_main, pwalletMain->cs_wallet);
+        auto it = pwalletMain->mapWallet.find(consolidationCarry.hash);
+        if (it != pwalletMain->mapWallet.end() &&
+            consolidationCarry.n < it->second.vout.size() &&
+            it->second.GetDepthInMainChain() >= 1 &&
+            !pwalletMain->IsSpent(consolidationCarry.hash, consolidationCarry.n))
+            confirmed = true;
+    }
+    if (confirmed) {
+        consolidationTimer->stop();
+        consolidationWaiting = false;
+        if (consolidationPaused)
+            finishConsolidation(tr("Paused; last transaction is confirmed."), false);
+        else
+            launchConsolidationBatch();
+    } else if (++consolidationPolls >= 30) {
+        finishConsolidation(tr("Confirmation was not observed within ten minutes. "
+                               "The last transaction may still confirm. "
+                               "Check transaction history before starting another session."), false);
+    }
+}
+
+void CoinControlDialog::consolidationPause()
+{
+    // Never cancel/retry an in-flight transaction. Only stop future batches.
+    consolidationPaused = true;
+}
+
+void CoinControlDialog::finishConsolidation(const QString& details, bool complete)
+{
+    consolidationTimer->stop();
+    consolidationRunning = false;
+    consolidationWaiting = false;
+    if (consolidationProgress)
+        consolidationProgress->hide();
+    delete consolidationUnlock;
+    consolidationUnlock = 0;
+    ui->pushButtonConsolidate->setEnabled(true);
+    ui->treeWidget->setEnabled(true);
+    updateView();
+    updateLabelLocked();
+    updateLabels(model, this);
+
+    QString summary = details + tr("\n\nTransactions broadcast: %1\nInputs consolidated: %2 of %3\nFees paid: %4")
+        .arg(consolidationTxCount).arg(consolidationProcessed).arg(consolidationInitial)
+        .arg(BitcoinUnits::formatWithUnit(model->getOptionsModel()->getDisplayUnit(),
+                                           consolidationFees));
+    if (complete)
+        QMessageBox::information(this, tr("UTXO consolidation complete"), summary);
+    else
+        QMessageBox::warning(this, tr("UTXO consolidation stopped"), summary);
 }
 
 // (un)select all
