@@ -3642,7 +3642,7 @@ bool CWallet::CreateConsolidationTransaction(const std::vector<COutPoint>& input
                            reason, &selection, true, ALL_COINS, false))
         return false;
 
-    if (fee <= 0 || fee > feeCap ||
+    if (fee < 0 || fee > feeCap ||
         ::GetSerializeSize(static_cast<const CTransaction&>(wtxNew),
                            SER_NETWORK, PROTOCOL_VERSION) > sizeCap ||
         wtxNew.vout.size() != 1 || wtxNew.vout[0].scriptPubKey != destinationScript ||

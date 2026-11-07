@@ -329,7 +329,7 @@ void CoinControlDialog::buttonConsolidateClicked()
         std::max<CAmount>(COIN / 5, 2 * pwalletMain->GetRequiredFee(80000)));
     const int budgetRounds = (int)((snapshot.size() + 197) / 199);
     if (consolidationBatchFeeCap <= 0 ||
-        budgetRounds > 0 && consolidationBatchFeeCap > MAX_MONEY / budgetRounds) {
+        (budgetRounds > 0 && consolidationBatchFeeCap > MAX_MONEY / budgetRounds)) {
         QMessageBox::warning(this, tr("Consolidate UTXOs"),
             tr("Cannot calculate a safe consolidation fee budget."));
         return;
@@ -428,7 +428,7 @@ void CoinControlDialog::consolidationBatchFinished(QString txid, QString error,
 {
     if (!consolidationRunning)
         return;
-    if (txid.isEmpty() || !error.isEmpty() || usedInputs < 2 || fee <= 0) {
+    if (txid.isEmpty() || !error.isEmpty() || usedInputs < 2 || fee < 0) {
         finishConsolidation(tr("Batch stopped: %1").arg(error.isEmpty()
                             ? tr("No transaction broadcast") : error), false);
         return;
