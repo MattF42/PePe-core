@@ -227,7 +227,7 @@ void CMasternodeMan::CheckAndRemove(CConnman& connman)
                         mMnbRecoveryRequests[hash] = std::make_pair(GetTime() + MNB_RECOVERY_WAIT_SECONDS, setRequested);
                     } else {
                         LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- Recovery deferred, insufficient eligible peers (%d/%d), masternode=%s\n",
-                                 (int)setRequested.size(), MNB_RECOVERY_QUORUM_REQUIRED, it->first.ToStringShort());
+                                 (int)setRequested.size(), (int)MNB_RECOVERY_QUORUM_REQUIRED, it->first.ToStringShort());
                     }
                 }
                 ++it;
