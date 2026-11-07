@@ -2718,61 +2718,71 @@ UniValue fundrawtransaction(const UniValue& params, bool fHelp)
     return result;
 }
 
-// Idea taken from 
-// https://github.com/smileycoin/smileyCoin/blob/6de584365006aae7d04c4720f64eb168fa447ac5/src/rpcwallet.cpp#L1652
-bool CompareAllOutputs(COutput a, COutput b) {
-	return a.tx->vout[a.i].nValue < b.tx->vout[b.i].nValue;
+// Consolidate exact confirmed coins rather than sending the same amount with
+// ordinary automatic coin selection (which never guaranteed N inputs).
+static bool ConsolidationByValue(const COutput& a, const COutput& b)
+{
+    CAmount av = a.tx->vout[a.i].nValue, bv = b.tx->vout[b.i].nValue;
+    if (av != bv) return av < bv;
+    if (a.tx->GetHash() != b.tx->GetHash()) return a.tx->GetHash() < b.tx->GetHash();
+    return a.i < b.i;
 }
 
 extern UniValue consolidate(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 2 || params[1].get_int() > 200)
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+    if (fHelp || params.size() != 2)
         throw runtime_error(
-            "consolidate \"pepewaddress\" N \n"
-            "\nConsolidate many UTXOs into one big one, up to 200\n"
+            "consolidate \"pepewaddress\" N\n"
+            "\nConsolidate 2 to 200 confirmed, spendable UTXOs at one wallet-owned address.\n"
+            "N is the maximum requested input count.\n"
             + HelpRequiringPassphrase() +
             "\nArguments:\n"
-            "1. \"address\"  (string, required) One of your own PEPEW addresses that contains UTXOsl.\n"
-            "2. \"N\"             (numeric, required) The amount of UTXOs to consolidate. eg 50\n"
-            "\nResult:\n"
-            "\"transactionid\"  (string) The transaction id.\n"
-            "\nExamples:\n"
-            + HelpExampleCli("consolidate", "\"PMG1tmwb7fRrPnKmRCuAzKBd2t7KPDw6Nf\" 10")
-            + HelpExampleCli("consolidate", "\"PMG1tmwb7fRrPnKmRCuAzKBd2t7KPDw6Nf\" 100")
-            + HelpExampleCli("consolidate", "\"PMG1tmwb7fRrPnKmRCuAzKBd2t7KPDw6Nf\" 200")
-        );
+            "1. \"address\" (string, required) A spendable address in this wallet.\n"
+            "2. N (integer, required) 2 to 200 inputs.\n"
+            "\nResult: transaction ID.\n"
+            + HelpExampleCli("consolidate", "\"PMG1tmwb7fRrPnKmRCuAzKBd2t7KPDw6Nf\" 200"));
 
-
-    set<CBitcoinAddress> setAddress;
     CBitcoinAddress address(params[0].get_str());
     if (!address.IsValid())
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid PEPEW address");
-    setAddress.insert(address);
-
-    int64_t N = params[1].get_int();
-    int64_t tBalance = 0;
-    int64_t tIter = 0;
-
-    vector<COutput> vecOutputs;
-    assert(pwalletMain != NULL);
-    pwalletMain->AvailableCoins(vecOutputs, false);
-    sort(vecOutputs.begin(), vecOutputs.end(), CompareAllOutputs);
-    BOOST_FOREACH(const COutput& out, vecOutputs)
-    {
-        int64_t nValue = out.tx->vout[out.i].nValue;
-	if (nValue < COIN * 1000000 ) {
-	    // LogPrintf("Consolidating transaction with nValue %s\n: ",nValue);
-            if (tIter < N) {
-                tBalance += nValue;
-                tIter++;
-            }
-	}
-    }
-
-    int64_t nAmount = AmountFromValue(ValueFromAmount(tBalance));
-    CWalletTx wtx2;
+    int count = params[1].get_int();
+    if (count < 2 || count > 200)
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "N must be between 2 and 200");
     EnsureWalletIsUnlocked();
 
-    SendMoney(address.Get(), nAmount, true, wtx2, false, false);
-    return wtx2.GetHash().GetHex();
+    if (pwalletMain->GetBroadcastTransactions() && !g_connman)
+        throw JSONRPCError(RPC_CLIENT_P2P_DISABLED, "Peer-to-peer functionality missing or disabled");
+
+    std::vector<COutput> outputs;
+    pwalletMain->AvailableConsolidationCoins(outputs);
+    std::sort(outputs.begin(), outputs.end(), ConsolidationByValue);
+    std::vector<COutPoint> selected;
+    BOOST_FOREACH(const COutput& out, outputs) {
+        CTxDestination source;
+        if (!ExtractDestination(out.tx->vout[out.i].scriptPubKey, source) ||
+            source != address.Get())
+            continue;
+        selected.push_back(COutPoint(out.tx->GetHash(), out.i));
+        if (selected.size() >= (size_t)count)
+            break;
+    }
+    if (selected.size() < 2)
+        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS,
+                           "Not enough eligible confirmed UTXOs at this address");
+
+    CWalletTx tx;
+    CReserveKey reservekey(pwalletMain);
+    CAmount fee = 0;
+    std::string error;
+    // Both RPC and GUI use the same strict wallet builder. The RPC keeps its
+    // original 200-input limit and a conservative signed-size cap.
+    if (!pwalletMain->CreateConsolidationTransaction(selected, address.Get(), tx,
+                                                     reservekey, fee, error, maxTxFee))
+        throw JSONRPCError(RPC_WALLET_ERROR, error);
+    if (!pwalletMain->CommitTransaction(tx, reservekey, g_connman.get(), NetMsgType::TX))
+        throw JSONRPCError(RPC_WALLET_ERROR,
+                           "Consolidation transaction rejected without recording spent inputs");
+    return tx.GetHash().GetHex();
 }

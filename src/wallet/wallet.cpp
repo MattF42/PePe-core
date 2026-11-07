@@ -3566,6 +3566,102 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
     return true;
 }
 
+
+void CWallet::AvailableConsolidationCoins(std::vector<COutput>& eligible) const
+{
+    std::vector<COutput> available;
+    AvailableCoins(available, true);
+    eligible.clear();
+
+    BOOST_FOREACH(const COutput& out, available) {
+        const CAmount value = out.tx->vout[out.i].nValue;
+        CTxDestination address;
+        // Be conservative about collateral, PrivateSend and unconfirmed change.
+        if (out.nDepth < 1 || !out.fSpendable ||
+            !ExtractDestination(out.tx->vout[out.i].scriptPubKey, address) ||
+            CPrivateSend::IsDenominatedAmount(value) ||
+            CPrivateSend::IsCollateralAmount(value) ||
+            value == 10000000 * COIN ||
+            value == 25000000 * COIN ||
+            value == 50000000 * COIN ||
+            value == 100000000 * COIN)
+            continue;
+        eligible.push_back(out);
+    }
+}
+
+bool CWallet::CreateConsolidationTransaction(const std::vector<COutPoint>& inputs,
+                                             const CTxDestination& dest,
+                                             CWalletTx& wtxNew, CReserveKey& reservekey,
+                                             CAmount& fee, std::string& reason,
+                                             CAmount feeCap, unsigned int sizeCap)
+{
+    if (inputs.size() < 2 || inputs.size() > 500 || sizeCap == 0 || sizeCap >= MAX_STANDARD_TX_SIZE) {
+        reason = "Invalid consolidation input count or size limit";
+        return false;
+    }
+
+    LOCK2(cs_main, cs_wallet);
+    const CScript destinationScript = GetScriptForDestination(dest);
+    if (IsMine(CTxOut(1, destinationScript)) != ISMINE_SPENDABLE) {
+        reason = "Consolidation destination is not spendable by this wallet";
+        return false;
+    }
+
+    std::vector<COutput> available;
+    AvailableConsolidationCoins(available);
+    std::map<COutPoint, CAmount> spendable;
+    BOOST_FOREACH(const COutput& out, available)
+        spendable[COutPoint(out.tx->GetHash(), out.i)] = out.tx->vout[out.i].nValue;
+
+    CCoinControl selection;
+    selection.fAllowOtherInputs = false;
+    selection.fUsePrivateSend = false;
+    selection.fUseInstantSend = false;
+    CAmount amount = 0;
+    std::set<COutPoint> exact;
+    BOOST_FOREACH(const COutPoint& input, inputs) {
+        if (!exact.insert(input).second || !spendable.count(input)) {
+            reason = "Duplicate, spent, locked or unconfirmed consolidation input";
+            return false;
+        }
+        const CAmount value = spendable[input];
+        if (value <= 0 || !MoneyRange(value) || !MoneyRange(amount + value)) {
+            reason = "Invalid consolidation input value";
+            return false;
+        }
+        amount += value;
+        selection.Select(input);
+    }
+
+    std::vector<CRecipient> recipients;
+    CRecipient recipient = {destinationScript, amount, true};
+    recipients.push_back(recipient);
+    int changePosition = -1;
+    if (!CreateTransaction(recipients, wtxNew, reservekey, fee, changePosition,
+                           reason, &selection, true, ALL_COINS, false))
+        return false;
+
+    if (fee <= 0 || fee > feeCap ||
+        ::GetSerializeSize(wtxNew, SER_NETWORK, PROTOCOL_VERSION) > sizeCap ||
+        wtxNew.vout.size() != 1 || wtxNew.vout[0].scriptPubKey != destinationScript ||
+        wtxNew.vout[0].nValue != amount - fee ||
+        wtxNew.vin.size() != exact.size()) {
+        reason = "Consolidation fee, size or output policy exceeded";
+        return false;
+    }
+
+    std::set<COutPoint> actual;
+    BOOST_FOREACH(const CTxIn& in, wtxNew.vin)
+        actual.insert(in.prevout);
+    if (actual != exact) {
+        reason = "Consolidation transaction did not use exactly the specified inputs";
+        return false;
+    }
+
+    return true;
+}
+
 /**
  * Call after CreateTransaction unless you want to abort
  */
