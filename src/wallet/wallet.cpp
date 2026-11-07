@@ -2632,6 +2632,8 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
     // coin control -> return all selected outputs (we want all selected to go into the transaction for sure)
     if (coinControl && coinControl->HasSelected() && !coinControl->fAllowOtherInputs)
     {
+        std::vector<COutPoint> vRequested;
+        coinControl->ListSelected(vRequested);
         BOOST_FOREACH(const COutput& out, vCoins)
         {
             if(!out.fSpendable)
@@ -2647,7 +2649,8 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
             setCoinsRet.insert(make_pair(out.tx, out.i));
         }
 
-        return (nValueRet >= nTargetValue);
+        // A stale selected outpoint cannot silently disappear.
+        return (setCoinsRet.size() == vRequested.size() && nValueRet >= nTargetValue);
     }
 
     //if we're doing only denominated, we need to round up to the nearest smallest denomination
@@ -2681,6 +2684,16 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
         coinControl->ListSelected(vPresetInputs);
     BOOST_FOREACH(const COutPoint& outpoint, vPresetInputs)
     {
+        // A mapWallet record is not evidence of a currently spendable output.
+        bool fAvailable = false;
+        BOOST_FOREACH(const COutput& out, vCoins) {
+            if (out.tx->GetHash() == outpoint.hash && out.i == outpoint.n && out.fSpendable) {
+                fAvailable = true;
+                break;
+            }
+        }
+        if (!fAvailable)
+            return false;
         map<uint256, CWalletTx>::const_iterator it = mapWallet.find(outpoint.hash);
         if (it != mapWallet.end())
         {
@@ -3561,6 +3574,14 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey, CCon
     {
         LOCK2(cs_main, cs_wallet);
         LogPrintf("CommitTransaction:\n%s", wtxNew.ToString());
+
+        // Validate mempool acceptance before recording wallet spends. Otherwise
+        // a rejected tx can falsely make unspent outputs disappear.
+        if (fBroadcastTransactions && !wtxNew.AcceptToMemoryPool(false))
+        {
+            LogPrintf("CommitTransaction(): rejected before recording wallet spend\n");
+            return false;
+        }
         {
             // This is only to keep the database open to defeat the auto-flush for the
             // duration of this scope.  This is the only place where this optimization
@@ -3595,13 +3616,7 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey, CCon
 
         if (fBroadcastTransactions)
         {
-            // Broadcast
-            if (!wtxNew.AcceptToMemoryPool(false))
-            {
-                // This must not fail. The transaction has already been signed and recorded.
-                LogPrintf("CommitTransaction(): Error: Transaction not valid\n");
-                return false;
-            }
+            // Already accepted into the mempool above.
             wtxNew.RelayWalletTransaction(connman, strCommand);
         }
     }
