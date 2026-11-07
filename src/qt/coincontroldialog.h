@@ -52,7 +52,7 @@ public:
     static CCoinControl *coinControl;
     static bool fSubtractFeeFromAmount;
 
-protected:
+public:
     void done(int result) override;
 
 private:
