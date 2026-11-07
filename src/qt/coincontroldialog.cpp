@@ -23,6 +23,7 @@
 #include "privatesend-client.h"
 
 #include <boost/assign/list_of.hpp> // for 'map_list_of()'
+#include <set>
 
 #include <QApplication>
 #include <QCheckBox>
@@ -476,6 +477,33 @@ void CoinControlDialog::updateLabelLocked()
     else ui->labelLocked->setVisible(false);
 }
 
+int CoinControlDialog::pruneInvalidSelections(WalletModel *model)
+{
+    if (!model)
+        return 0;
+    std::vector<COutPoint> selected;
+    coinControl->ListSelected(selected);
+    if (selected.empty())
+        return 0;
+    std::vector<COutput> outputs;
+    model->getOutputs(selected, outputs);
+    std::set<COutPoint> available;
+    BOOST_FOREACH(const COutput& out, outputs) {
+        COutPoint p(out.tx->GetHash(), out.i);
+        if (out.fSpendable && !model->isSpent(p) &&
+            !model->isLockedCoin(p.hash, p.n))
+            available.insert(p);
+    }
+    int pruned = 0;
+    BOOST_FOREACH(const COutPoint& p, selected) {
+        if (!available.count(p)) {
+            coinControl->UnSelect(p);
+            ++pruned;
+        }
+    }
+    return pruned;
+}
+
 void CoinControlDialog::updateLabels(WalletModel *model, QDialog* dialog)
 {
     if (!model)
@@ -510,6 +538,7 @@ void CoinControlDialog::updateLabels(WalletModel *model, QDialog* dialog)
     int nQuantityUncompressed   = 0;
     bool fAllowFree             = false;
 
+    pruneInvalidSelections(model);
     std::vector<COutPoint> vCoinControl;
     std::vector<COutput>   vOutputs;
     coinControl->ListSelected(vCoinControl);
@@ -695,6 +724,7 @@ void CoinControlDialog::updateView()
     if (!model || !model->getOptionsModel() || !model->getAddressTableModel())
         return;
 
+    pruneInvalidSelections(model);
     bool treeMode = ui->radioTreeMode->isChecked();
     QString theme = GUIUtil::getThemeName();
     

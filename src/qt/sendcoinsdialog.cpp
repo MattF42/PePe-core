@@ -301,6 +301,17 @@ void SendCoinsDialog::on_sendButton_clicked()
 
 void SendCoinsDialog::send(QList<SendCoinsRecipient> recipients, QString strFee, QString strFunds)
 {
+    // Console/RPC spends can invalidate manual Coin Control selections.
+    if (model->getOptionsModel()->getCoinControlFeatures() &&
+        CoinControlDialog::pruneInvalidSelections(model) > 0)
+    {
+        coinControlUpdateLabels();
+        QMessageBox::warning(this, tr("Coin selection changed"),
+            tr("Some selected UTXOs are no longer available. Only those inputs were deselected. Please review the remaining selection before sending."));
+        fNewRecipientAllowed = true;
+        return;
+    }
+
     // prepare transaction for getting txFee earlier
     WalletModelTransaction currentTransaction(recipients);
     WalletModel::SendCoinsReturn prepareStatus;

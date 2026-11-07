@@ -324,6 +324,16 @@
          <number>14</number>
         </property>
         <item>
+         <widget class="QPushButton" name="pushButtonConsolidate">
+          <property name="text">
+           <string>Consolidate UTXOs</string>
+          </property>
+          <property name="autoDefault">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QPushButton" name="pushButtonSelectAll">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
