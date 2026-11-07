@@ -3626,7 +3626,7 @@ bool CWallet::CreateConsolidationTransaction(const std::vector<COutPoint>& input
             return false;
         }
         const CAmount value = spendable[input];
-        if (value <= 0 || !MoneyRange(value) || !MoneyRange(amount + value)) {
+        if (value <= 0 || !MoneyRange(value) || amount > MAX_MONEY - value) {
             reason = "Invalid consolidation input value";
             return false;
         }
@@ -3643,7 +3643,8 @@ bool CWallet::CreateConsolidationTransaction(const std::vector<COutPoint>& input
         return false;
 
     if (fee <= 0 || fee > feeCap ||
-        ::GetSerializeSize(wtxNew, SER_NETWORK, PROTOCOL_VERSION) > sizeCap ||
+        ::GetSerializeSize(static_cast<const CTransaction&>(wtxNew),
+                           SER_NETWORK, PROTOCOL_VERSION) > sizeCap ||
         wtxNew.vout.size() != 1 || wtxNew.vout[0].scriptPubKey != destinationScript ||
         wtxNew.vout[0].nValue != amount - fee ||
         wtxNew.vin.size() != exact.size()) {

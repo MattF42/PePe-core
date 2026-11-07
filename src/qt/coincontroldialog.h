@@ -17,6 +17,7 @@
 #include <QMenu>
 #include <QPoint>
 #include <QString>
+#include <QStringList>
 #include <QTreeWidgetItem>
 
 class PlatformStyle;
@@ -84,6 +85,7 @@ private:
     COutPoint consolidationCarry;
     CTxDestination consolidationDestination;
     std::vector<COutPoint> consolidationPending;
+    QStringList consolidationTxIds;
     QTimer *consolidationTimer;
     QProgressDialog *consolidationProgress;
     WalletModel::UnlockContext *consolidationUnlock;

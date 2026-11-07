@@ -66,6 +66,10 @@ public:
         qlonglong feeValue = 0;
         int used = 0;
         unsigned int count = inputs.size();
+        if (!wallet->GetBroadcastTransactions() || !g_connman) {
+            error = QString::fromLatin1("Wallet broadcasting or peer connectivity is disabled.");
+            count = 0;
+        }
         while (count >= 2) {
             std::vector<COutPoint> batch(inputs.begin(), inputs.begin() + count);
             CWalletTx tx;
@@ -364,6 +368,7 @@ void CoinControlDialog::buttonConsolidateClicked()
     consolidationTxCount = 0;
     consolidationPolls = 0;
     consolidationFees = 0;
+    consolidationTxIds.clear();
     ui->pushButtonConsolidate->setEnabled(false);
     ui->treeWidget->setEnabled(false);
 
@@ -442,6 +447,7 @@ void CoinControlDialog::consolidationBatchFinished(QString txid, QString error,
     consolidationProcessed += consumed;
     consolidationFees += fee;
     consolidationTxCount++;
+    consolidationTxIds.append(txid);
     consolidationCarry = COutPoint(uint256S(txid.toStdString()), 0);
     consolidationHasCarry = true;
     consolidationWaiting = true;
@@ -487,6 +493,9 @@ void CoinControlDialog::consolidationPause()
 {
     // Never cancel/retry an in-flight transaction. Only stop future batches.
     consolidationPaused = true;
+    if (consolidationProgress)
+        consolidationProgress->setLabelText(
+            tr("Pause requested. Waiting for the current transaction or confirmation."));
 }
 
 void CoinControlDialog::finishConsolidation(const QString& details, bool complete)
@@ -508,6 +517,8 @@ void CoinControlDialog::finishConsolidation(const QString& details, bool complet
         .arg(consolidationTxCount).arg(consolidationProcessed).arg(consolidationInitial)
         .arg(BitcoinUnits::formatWithUnit(model->getOptionsModel()->getDisplayUnit(),
                                            consolidationFees));
+    if (!consolidationTxIds.isEmpty())
+        summary += tr("\nTransaction IDs:\n%1").arg(consolidationTxIds.join("\n"));
     if (complete)
         QMessageBox::information(this, tr("UTXO consolidation complete"), summary);
     else
