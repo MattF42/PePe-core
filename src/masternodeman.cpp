@@ -273,12 +273,41 @@ void CMasternodeMan::CheckAndRemove(CConnman& connman)
             if(mMnbRecoveryRequests[itMnbReplies->first].first < GetTime()) {
                 // all nodes we asked should have replied now
                 if(itMnbReplies->second.size() >= MNB_RECOVERY_QUORUM_REQUIRED) {
-                    // majority of nodes we asked agrees that this mn doesn't require new mnb, reprocess one of new mnbs
-                    LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- reprocessing mnb, masternode=%s\n", itMnbReplies->second[0].vin.prevout.ToStringShort());
-                    // mapSeenMasternodeBroadcast.erase(itMnbReplies->first);
-                    int nDos;
-                    itMnbReplies->second[0].fRecovery = true;
-                    CheckMnbAndUpdateMasternodeList(NULL, itMnbReplies->second[0], nDos, connman);
+                    // A projected ENABLED state alone does not validate the ping's block height
+                    // or signatures. Only count replies that still pass these checks.
+                    int nValidReplies = 0;
+                    int nStalePingBlocks = 0;
+                    size_t nBestReply = itMnbReplies->second.size();
+                    for(size_t i = 0; i < itMnbReplies->second.size(); ++i) {
+                        CMasternodeBroadcast& mnbCandidate = itMnbReplies->second[i];
+                        int nDos = 0;
+                        if(!mnbCandidate.lastPing.SimpleCheck(nDos)) continue;
+                        const auto mi = mapBlockIndex.find(mnbCandidate.lastPing.blockHash);
+                        // Match the existing 24-block limit in CMasternodePing::CheckAndUpdate.
+                        if(mi == mapBlockIndex.end() || !mi->second ||
+                           mi->second->nHeight < chainActive.Height() - 24) {
+                            nStalePingBlocks++;
+                            continue;
+                        }
+                        if(!mnbCandidate.CheckSignature(nDos) ||
+                           !mnbCandidate.lastPing.CheckSignature(mnbCandidate.pubKeyMasternode, nDos)) continue;
+                        nValidReplies++;
+                        if(nBestReply == itMnbReplies->second.size() ||
+                           mnbCandidate.lastPing.sigTime > itMnbReplies->second[nBestReply].lastPing.sigTime) {
+                            nBestReply = i;
+                        }
+                    }
+                    if(nValidReplies >= MNB_RECOVERY_QUORUM_REQUIRED) {
+                        CMasternodeBroadcast mnbRecovery = itMnbReplies->second[nBestReply];
+                        LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- reprocessing mnb, masternode=%s, verified=%d/%d, stale_ping_blocks=%d\n",
+                                 mnbRecovery.vin.prevout.ToStringShort(), nValidReplies, MNB_RECOVERY_QUORUM_REQUIRED, nStalePingBlocks);
+                        int nDos;
+                        mnbRecovery.fRecovery = true;
+                        CheckMnbAndUpdateMasternodeList(NULL, mnbRecovery, nDos, connman);
+                    } else {
+                        LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- Recovery skipped, masternode=%s, verified=%d/%d, stale_ping_blocks=%d, received=%d\n",
+                                 itMnbReplies->second[0].vin.prevout.ToStringShort(), nValidReplies, MNB_RECOVERY_QUORUM_REQUIRED, nStalePingBlocks, (int)itMnbReplies->second.size());
+                    }
                 }
                 LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- removing mnb recovery reply, masternode=%s, size=%d\n", itMnbReplies->second[0].vin.prevout.ToStringShort(), (int)itMnbReplies->second.size());
                 mMnbRecoveryGoodReplies.erase(itMnbReplies++);
