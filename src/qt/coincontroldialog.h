@@ -87,6 +87,7 @@ private:
     std::vector<COutPoint> consolidationPending;
     QStringList consolidationTxIds;
     QTimer *consolidationTimer;
+    QTimer *coinListRefreshTimer;
     QProgressDialog *consolidationProgress;
     WalletModel::UnlockContext *consolidationUnlock;
 
@@ -160,6 +161,8 @@ private Q_SLOTS:
     void consolidationPause();
     void buttonToggleLockClicked();
     void updateLabelLocked();
+    void scheduleCoinListRefresh();
+    void refreshCoinList();
 };
 
 #endif // BITCOIN_QT_COINCONTROLDIALOG_H
