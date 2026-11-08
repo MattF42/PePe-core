@@ -248,6 +248,23 @@ void CMasternodeMan::CheckAndRemove(CConnman& connman)
         // One summary per maintenance pass to diagnose recovery gate failures.
         LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- Recovery gate: synced=%d, new_start=%d, already_requested=%d, pending_records=%d, budget_remaining=%d\n",
                  masternodeSync.IsSynced(), nRecoveryNewStartRequired, nRecoveryAlreadyRequested, (int)mMnbRecoveryRequests.size(), nAskForMnbRecovery);
+        // Diagnostic only: peer sets are remaining, not necessarily the original request size.
+        int nEmptyRecoveryPeerSets = 0;
+        int nRecoveryRequestsOverdue = 0;
+        int64_t nEarliestRecoveryRetrySeconds = 0;
+        int64_t nLatestRecoveryRetrySeconds = 0;
+        bool fFirstRecoveryRequest = true;
+        const int64_t nRecoveryNow = GetTime();
+        for (const auto& request : mMnbRecoveryRequests) {
+            if (request.second.second.empty()) nEmptyRecoveryPeerSets++;
+            const int64_t nRetrySeconds = request.second.first + MNB_RECOVERY_RETRY_SECONDS - nRecoveryNow;
+            if (nRetrySeconds < 0) nRecoveryRequestsOverdue++;
+            if (fFirstRecoveryRequest || nRetrySeconds < nEarliestRecoveryRetrySeconds) nEarliestRecoveryRetrySeconds = nRetrySeconds;
+            if (fFirstRecoveryRequest || nRetrySeconds > nLatestRecoveryRetrySeconds) nLatestRecoveryRetrySeconds = nRetrySeconds;
+            fFirstRecoveryRequest = false;
+        }
+        LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- Recovery backlog: empty_peer_sets=%d, overdue=%d, earliest_retry_sec=%lld, latest_retry_sec=%lld\n",
+                 nEmptyRecoveryPeerSets, nRecoveryRequestsOverdue, (long long)nEarliestRecoveryRetrySeconds, (long long)nLatestRecoveryRetrySeconds);
 
         // proces replies for MASTERNODE_NEW_START_REQUIRED masternodes
         LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- mMnbRecoveryGoodReplies size=%d\n", (int)mMnbRecoveryGoodReplies.size());
