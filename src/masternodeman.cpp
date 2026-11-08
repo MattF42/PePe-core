@@ -539,7 +539,7 @@ bool CMasternodeMan::GetNextMasternodeInQueueForPayment(int nBlockHeight, bool f
         if(fFilterSigTime && mnpair.second.sigTime + (nMnCount*2.6*60) > GetAdjustedTime()) continue;
 
         int64_t seconds = (int64_t)(mnpair.second.lastPing.sigTime - mnpair.second.sigTime);
-        LogPrint("masternode", "CMasternodeMan::GetNextMasternodeInQueueForPayment --seconds=i", seconds);
+        LogPrint("masternode", "CMasternodeMan::GetNextMasternodeInQueueForPayment -- seconds=%d\n", seconds);
         if(seconds < CMasternodeMan::FIVE_DAY) {
              if(Params().NetworkIDString() == CBaseChainParams::REGTEST) {
                   LogPrintf("Regtest so skipping MN age requirements\n");
