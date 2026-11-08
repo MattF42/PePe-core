@@ -178,6 +178,8 @@ void CMasternodeMan::CheckAndRemove(CConnman& connman)
         rank_pair_vec_t vecMasternodeRanks;
         // ask for up to MNB_RECOVERY_MAX_ASK_ENTRIES masternode entries at a time
         int nAskForMnbRecovery = MNB_RECOVERY_MAX_ASK_ENTRIES;
+        int nRecoveryNewStartRequired = 0;
+        int nRecoveryAlreadyRequested = 0;
         std::map<COutPoint, CMasternode>::iterator it = mapMasternodes.begin();
         while (it != mapMasternodes.end()) {
             CMasternodeBroadcast mnb = CMasternodeBroadcast(it->second);
@@ -195,6 +197,10 @@ void CMasternodeMan::CheckAndRemove(CConnman& connman)
                 mapMasternodes.erase(it++);
                 fMasternodesRemoved = true;
             } else {
+                if (it->second.IsNewStartRequired()) {
+                    nRecoveryNewStartRequired++;
+                    if (IsMnbRecoveryRequested(hash)) nRecoveryAlreadyRequested++;
+                }
                 bool fAsk = (nAskForMnbRecovery > 0) &&
                             masternodeSync.IsSynced() &&
                             it->second.IsNewStartRequired() &&
@@ -239,6 +245,9 @@ void CMasternodeMan::CheckAndRemove(CConnman& connman)
                 ++it;
             }
         }
+        // One summary per maintenance pass to diagnose recovery gate failures.
+        LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- Recovery gate: synced=%d, new_start=%d, already_requested=%d, pending_records=%d, budget_remaining=%d\n",
+                 masternodeSync.IsSynced(), nRecoveryNewStartRequired, nRecoveryAlreadyRequested, (int)mMnbRecoveryRequests.size(), nAskForMnbRecovery);
 
         // proces replies for MASTERNODE_NEW_START_REQUIRED masternodes
         LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- mMnbRecoveryGoodReplies size=%d\n", (int)mMnbRecoveryGoodReplies.size());
