@@ -208,9 +208,14 @@ void CMasternodeMan::CheckAndRemove(CConnman& connman)
                         GetMasternodeRanks(vecMasternodeRanks, nRandomBlockHeight);
                     }
                     std::vector<CService> vecToRequest;
-                    // Collect distinct candidates before scheduling. Recovery needs a quorum of replies.
+                    int nCandidatesScanned = 0;
+                    int nEnabledCandidates = 0;
+                    // Only active, distinct masternodes can be relied on for recovery quorum.
                     for(int i = 0; setRequested.size() < MNB_RECOVERY_QUORUM_TOTAL && i < (int)vecMasternodeRanks.size(); i++) {
-                        // avoid banning
+                        nCandidatesScanned++;
+                        if(!vecMasternodeRanks[i].second.IsEnabled()) continue;
+                        nEnabledCandidates++;
+                        // Avoid asking the same peer too often.
                         if(mWeAskedForMasternodeListEntry.count(it->first) && mWeAskedForMasternodeListEntry[it->first].count(vecMasternodeRanks[i].second.addr)) continue;
                         CService addr = vecMasternodeRanks[i].second.addr;
                         if(setRequested.insert(addr).second) {
@@ -221,13 +226,14 @@ void CMasternodeMan::CheckAndRemove(CConnman& connman)
                         for(const CService& addr : vecToRequest) {
                             listScheduledMnbRequestConnections.push_back(std::make_pair(addr, hash));
                         }
-                        LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- Recovery initiated, masternode=%s\n", it->first.ToStringShort());
+                        LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- Recovery initiated, masternode=%s, requested=%d/%d, scanned=%d, enabled=%d\n",
+                                 it->first.ToStringShort(), (int)setRequested.size(), (int)MNB_RECOVERY_QUORUM_REQUIRED, nCandidatesScanned, nEnabledCandidates);
                         nAskForMnbRecovery--;
                         // Wait for replies only when there are enough candidates to reach quorum.
                         mMnbRecoveryRequests[hash] = std::make_pair(GetTime() + MNB_RECOVERY_WAIT_SECONDS, setRequested);
                     } else {
-                        LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- Recovery deferred, insufficient eligible peers (%d/%d), masternode=%s\n",
-                                 (int)setRequested.size(), (int)MNB_RECOVERY_QUORUM_REQUIRED, it->first.ToStringShort());
+                        LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- Recovery deferred, masternode=%s, requested=%d/%d, scanned=%d, enabled=%d\n",
+                                 it->first.ToStringShort(), (int)setRequested.size(), (int)MNB_RECOVERY_QUORUM_REQUIRED, nCandidatesScanned, nEnabledCandidates);
                     }
                 }
                 ++it;
@@ -1464,6 +1470,8 @@ bool CMasternodeMan::CheckMnbAndUpdateMasternodeList(CNode* pfrom, CMasternodeBr
                             // this node thinks it's a good one
                             LogPrint("masternode", "CMasternodeMan::CheckMnbAndUpdateMasternodeList -- masternode=%s seen good\n", mnb.vin.prevout.ToStringShort());
                             mMnbRecoveryGoodReplies[hash].push_back(mnb);
+                            LogPrint("masternode", "CMasternodeMan::CheckMnbAndUpdateMasternodeList -- Recovery good reply, masternode=%s, replies=%d/%d\n",
+                                     mnb.vin.prevout.ToStringShort(), (int)mMnbRecoveryGoodReplies[hash].size(), (int)MNB_RECOVERY_QUORUM_REQUIRED);
                         }
                     }
                 }
