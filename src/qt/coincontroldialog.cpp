@@ -11,6 +11,7 @@
 #include "guiutil.h"
 #include "optionsmodel.h"
 #include "platformstyle.h"
+#include "transactiontablemodel.h"
 #include "txmempool.h"
 #include "walletmodel.h"
 
@@ -129,6 +130,7 @@ CoinControlDialog::CoinControlDialog(const PlatformStyle *platformStyle, QWidget
     consolidationFeeBudget(0),
     consolidationBatchFeeCap(0),
     consolidationTimer(new QTimer(this)),
+    coinListRefreshTimer(new QTimer(this)),
     consolidationProgress(0),
     consolidationUnlock(0)
 {
@@ -211,6 +213,8 @@ CoinControlDialog::CoinControlDialog(const PlatformStyle *platformStyle, QWidget
     connect(ui->pushButtonSelectAll, SIGNAL(clicked()), this, SLOT(buttonSelectAllClicked()));
     connect(ui->pushButtonConsolidate, SIGNAL(clicked()), this, SLOT(buttonConsolidateClicked()));
     connect(consolidationTimer, SIGNAL(timeout()), this, SLOT(consolidationPollConfirmation()));
+    coinListRefreshTimer->setSingleShot(true);
+    connect(coinListRefreshTimer, SIGNAL(timeout()), this, SLOT(refreshCoinList()));
 
     // Toggle lock state
     connect(ui->pushButtonToggleLock, SIGNAL(clicked()), this, SLOT(buttonToggleLockClicked()));
@@ -265,14 +269,43 @@ void CoinControlDialog::done(int result)
 
 void CoinControlDialog::setModel(WalletModel *model)
 {
+    if (this->model) {
+        disconnect(this->model, SIGNAL(balanceChanged(CAmount,CAmount,CAmount,CAmount,CAmount,CAmount,CAmount)),
+                   this, SLOT(scheduleCoinListRefresh()));
+        if (this->model->getTransactionTableModel())
+            disconnect(this->model->getTransactionTableModel(), SIGNAL(confirmationsChanged()),
+                       this, SLOT(scheduleCoinListRefresh()));
+    }
     this->model = model;
+    coinListRefreshTimer->stop();
 
     if(model && model->getOptionsModel() && model->getAddressTableModel())
     {
         updateView();
         updateLabelLocked();
         CoinControlDialog::updateLabels(model, this);
+        connect(model, SIGNAL(balanceChanged(CAmount,CAmount,CAmount,CAmount,CAmount,CAmount,CAmount)),
+                this, SLOT(scheduleCoinListRefresh()));
+        if (model->getTransactionTableModel())
+            connect(model->getTransactionTableModel(), SIGNAL(confirmationsChanged()),
+                    this, SLOT(scheduleCoinListRefresh()));
     }
+}
+
+void CoinControlDialog::scheduleCoinListRefresh()
+{
+    // Coalesce rapid wallet/chain changes; rebuilding the UTXO tree is costly
+    // for large wallets. The consolidation worker maintains its own snapshot.
+    if (isVisible() && !consolidationRunning)
+        coinListRefreshTimer->start(3000);
+}
+
+void CoinControlDialog::refreshCoinList()
+{
+    if (!model || !isVisible() || consolidationRunning)
+        return;
+    updateView();
+    CoinControlDialog::updateLabels(model, this);
 }
 
 // helper function str_pad
