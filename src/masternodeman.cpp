@@ -300,13 +300,13 @@ void CMasternodeMan::CheckAndRemove(CConnman& connman)
                     if(nValidReplies >= MNB_RECOVERY_QUORUM_REQUIRED) {
                         CMasternodeBroadcast mnbRecovery = itMnbReplies->second[nBestReply];
                         LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- reprocessing mnb, masternode=%s, verified=%d/%d, stale_ping_blocks=%d\n",
-                                 mnbRecovery.vin.prevout.ToStringShort(), nValidReplies, MNB_RECOVERY_QUORUM_REQUIRED, nStalePingBlocks);
+                                 mnbRecovery.vin.prevout.ToStringShort(), nValidReplies, (int)MNB_RECOVERY_QUORUM_REQUIRED, nStalePingBlocks);
                         int nDos;
                         mnbRecovery.fRecovery = true;
                         CheckMnbAndUpdateMasternodeList(NULL, mnbRecovery, nDos, connman);
                     } else {
                         LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- Recovery skipped, masternode=%s, verified=%d/%d, stale_ping_blocks=%d, received=%d\n",
-                                 itMnbReplies->second[0].vin.prevout.ToStringShort(), nValidReplies, MNB_RECOVERY_QUORUM_REQUIRED, nStalePingBlocks, (int)itMnbReplies->second.size());
+                                 itMnbReplies->second[0].vin.prevout.ToStringShort(), nValidReplies, (int)MNB_RECOVERY_QUORUM_REQUIRED, nStalePingBlocks, (int)itMnbReplies->second.size());
                     }
                 }
                 LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- removing mnb recovery reply, masternode=%s, size=%d\n", itMnbReplies->second[0].vin.prevout.ToStringShort(), (int)itMnbReplies->second.size());
