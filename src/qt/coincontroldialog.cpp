@@ -136,8 +136,20 @@ CoinControlDialog::CoinControlDialog(const PlatformStyle *platformStyle, QWidget
 {
     ui->setupUi(this);
     
-    /* Open CSS when configured */
-    this->setStyleSheet(GUIUtil::loadStyleSheet());
+    /* Open CSS when configured. QTreeWidget item indicators are not QCheckBox
+       widgets, so the theme's QCheckBox indicator rules do not style these. */
+    this->setStyleSheet(GUIUtil::loadStyleSheet() + QString::fromLatin1(
+        "\nQDialog#CoinControlDialog QTreeWidget#treeWidget::indicator {"
+        " width: 16px; height: 16px; }"
+        "\nQDialog#CoinControlDialog QTreeWidget#treeWidget::indicator:unchecked {"
+        " image: url(:/images/light/unchecked); }"
+        "\nQDialog#CoinControlDialog QTreeWidget#treeWidget::indicator:checked {"
+        " image: url(:/images/light/checked); }"
+        "\nQDialog#CoinControlDialog QTreeWidget#treeWidget::indicator:indeterminate {"
+        " background: #a0e8c0; border: 1px solid #f7f7ff; }"
+        "\nQDialog#CoinControlDialog QTreeWidget#treeWidget::indicator:disabled {"
+        " background: #625776; border: 1px solid #8e829e; }"
+    ));
 
     // context menu actions
     QAction *copyAddressAction = new QAction(tr("Copy address"), this);
@@ -1132,7 +1144,10 @@ void CoinControlDialog::updateView()
 
             // address
             itemWalletAddress->setText(COLUMN_ADDRESS, sWalletAddress);
-            itemWalletAddress->setToolTip(COLUMN_ADDRESS, sWalletAddress);
+            // This is the grouping/source address, not necessarily the address
+            // of every UTXO below (change outputs retain their own address).
+            itemWalletAddress->setToolTip(COLUMN_ADDRESS,
+                tr("Grouping address: %1. Expand to see each UTXO's actual address.").arg(sWalletAddress));
         }
 
         CAmount nSum = 0;
@@ -1158,7 +1173,8 @@ void CoinControlDialog::updateView()
                 if (!treeMode || (!(sAddress == sWalletAddress)))
                     itemOutput->setText(COLUMN_ADDRESS, sAddress);
 
-                itemOutput->setToolTip(COLUMN_ADDRESS, sAddress);
+                itemOutput->setToolTip(COLUMN_ADDRESS,
+                    tr("Actual UTXO address: %1").arg(sAddress));
             }
 
             // label
@@ -1223,8 +1239,10 @@ void CoinControlDialog::updateView()
         if (treeMode)
         {
             itemWalletAddress->setText(COLUMN_CHECKBOX, "(" + QString::number(nChildren) + ")");
-            itemWalletAddress->setText(COLUMN_AMOUNT, BitcoinUnits::format(nDisplayUnit, nSum));
-            itemWalletAddress->setToolTip(COLUMN_AMOUNT, BitcoinUnits::format(nDisplayUnit, nSum));
+            // The parent is a sum of the child UTXOs, not another spendable coin.
+            itemWalletAddress->setText(COLUMN_AMOUNT, tr("Σ %1").arg(BitcoinUnits::format(nDisplayUnit, nSum)));
+            itemWalletAddress->setToolTip(COLUMN_AMOUNT,
+                tr("Group total of %1 UTXO(s), not an additional output.").arg(nChildren));
             itemWalletAddress->setText(COLUMN_AMOUNT_INT64, strPad(QString::number(nSum), 15, " "));
         }
     }
