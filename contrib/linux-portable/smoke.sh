@@ -56,7 +56,7 @@ done
 [ ! -e "$work/daemon.pid" ] || { echo 'Daemon did not shut down' >&2; exit 1; }
 # AppImage extraction avoids requiring FUSE in CI. Xvfb supplies a real X backend.
 cd "$work"
-/artifact/PEPEPOW_qt.AppImage --appimage-extract >/dev/null
+/artifact/PEPEPOW_qt --appimage-extract >/dev/null
 cd "$work/standalone"
 datadir="$work/qt"
 mkdir -p "$datadir"
