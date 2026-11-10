@@ -42,6 +42,10 @@ assert s.count(needle)==1
 p.write_text(s.replace(needle,'export LD_LIBRARY_PATH="$this_dir/usr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"\n\n'+needle))
 PY
 ./appimagetool-x86_64.AppImage --runtime-file "$tools_dir/runtime-x86_64" "$tools_dir/AppDir" "$output_dir/PEPEPOW_qt.AppImage"
+# Keep the historical executable name. The file remains an AppImage internally;
+# users can launch it as ./PEPEPOW_qt with the same FUSE/extraction behavior.
+mv "$output_dir/PEPEPOW_qt.AppImage" "$output_dir/PEPEPOW_qt"
+chmod 755 "$output_dir/PEPEPOW_qt"
 mkdir -p "$output_dir/bin"
 for binary in PEPEPOWd PEPEPOW-cli PEPEPOW-tx; do
     install -m 755 "$build_dir/src/$binary" "$output_dir/bin/$binary"
@@ -51,7 +55,7 @@ cp "$source_dir/COPYING" "$output_dir/"
 cat > "$output_dir/README.md" <<'DOC'
 # PEPEPOW Linux x86_64 portable test package
 
-This is a CI test build, not an official release. Run `./PEPEPOW_qt.AppImage` in a graphical environment; on systems without FUSE, use `APPIMAGE_EXTRACT_AND_RUN=1`. The standalone `bin/PEPEPOWd`, `bin/PEPEPOW-cli`, and `bin/PEPEPOW-tx` can be copied individually; they require standard Linux system libraries but no bundled library directory. Standard desktop libraries including libGL and font configuration are required. Verify files with `sha256sum -c SHA256SUMS.txt`. Use backed-up data and test funds. Ubuntu 22.04/24.04 Xvfb tests do not establish real desktop or live-network behavior.
+This is a CI test build, not an official release. Run `./PEPEPOW_qt` in a graphical environment; the filename follows the historical wallet executable, but it internally contains an AppImage runtime. On systems without FUSE, use `APPIMAGE_EXTRACT_AND_RUN=1 ./PEPEPOW_qt`. The standalone `bin/PEPEPOWd`, `bin/PEPEPOW-cli`, and `bin/PEPEPOW-tx` can be copied individually; they require standard Linux system libraries but no bundled library directory. Standard desktop libraries including libGL and font configuration are required. Verify files with `sha256sum -c SHA256SUMS.txt`. Use backed-up data and test funds. Ubuntu 22.04/24.04 Xvfb tests do not establish real desktop or live-network behavior.
 DOC
 printf 'Source commit: %s\nCompiler: %s\n' "${PEPE_SOURCE_SHA:-unknown}" "$(g++ -dumpfullversion -dumpversion)" > "$output_dir/BUILD-INFO.txt"
 (cd "$output_dir"; find . -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt; sha256sum -c SHA256SUMS.txt)
