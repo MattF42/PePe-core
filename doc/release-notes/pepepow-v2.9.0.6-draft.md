@@ -21,6 +21,15 @@ Proposed **optional** maintenance release following [v2.9.0.5](https://github.co
 - Qt/wallet UTXO consolidation: one-click, wallet-owned destination, exact input selection, max 500 inputs per batch and signed transaction size below 80 KB. Fix stale selections and locally phantom-spent coins after rejected sends ([fork #9](https://github.com/edisontw/PePe-core/pull/9)). **Wallet core commit ordering is changed** and requires focused maintainer review and real-wallet tests.
 - Qt splash screen: improve contrast, loading-progress placement, and overlapping copyright lines ([fork #10](https://github.com/edisontw/PePe-core/pull/10)).
 
+## Proposed Qt presentation and Linux packaging additions — still Draft
+
+- **Qt Coin Control UI:** clearer checked/unchecked/partial selection indicators; tree-group amount receives a Σ subtotal marker with distinct grouping/source versus actual UTXO address tooltips. The 100,000,000-PEPEW example shows one real UTXO under an aggregate address group, not two collateral outputs. On fresh installations Coin Control and the Masternodes tab are enabled by default; existing explicit settings stay unchanged ([fork #14](https://github.com/edisontw/PePe-core/pull/14)).
+- **Linux x86_64:** package Qt + independently copyable daemon/CLI/tx together as one archive, as in v2.9.0.5. Qt retains the **`PEPEPOW_qt`** executable name; the portable implementation internally uses an AppImage runtime, bundling Qt/Boost libraries. The headless binaries use statically linked third-party dependencies and ordinary Linux system libraries ([fork #12](https://github.com/edisontw/PePe-core/pull/12)). FUSE or an extraction fallback may still be needed for Qt.
+- **Linux ARM64:** package Qt + daemon/CLI/tx together as one archive; Qt is a native AArch64 ELF with bundled shared Qt libraries/plugins, while headless binaries remain independently usable ([fork #13](https://github.com/edisontw/PePe-core/pull/13)).
+- **Testing limitation accepted by the owner:** Linux ARM64 Desktop was built and exercised on native ARM64 CI in Ubuntu 22.04/24.04 Xvfb, but *physical desktop interaction was not tested and is expressly not a release blocker*. Do not describe this as passed real-desktop testing. Four ARM64 masternode nodes were reported healthy after about a day, separately from the ARM64 GUI test.
+
+Integration of #12/#13/#14 with RC1 is staged on `release/v2.9.0.6-rc1-platform-staging`; final combined CI/packaging evidence must be recorded before publication. Do not reuse the individual PR artifact SHA256 values for final release packages.
+
 ## Upgrade notes (to verify before publication)
 
 - Back up `wallet.dat` and shut down PEPEPOW Core cleanly before replacing binaries.
