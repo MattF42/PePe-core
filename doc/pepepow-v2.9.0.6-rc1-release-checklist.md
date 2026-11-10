@@ -4,6 +4,22 @@
 
 This document collects the changes proposed for an optional post-v2.9.0.5 release. The version number is provisional until final approval. It is **not** a test report or a claim that all features passed live testing.
 
+## Updated RC readiness and explicit test scope (2026-11-11, Asia/Taipei)
+
+**This section supersedes older evidence snapshots below; status is not release approval.** The upstream `MattF42/PePe-core:master` and fork `master` remain at `38e801428688dfd0aee272b4a91819ac1a13ab4e`. The RC1 integration branch is `d29b6cc81a9f9e1f62aa089b5780ef698d6c6439`; it does **not yet** contain the three newer draft PRs. The separate candidate staging branch `release/v2.9.0.6-rc1-platform-staging` collects the exact source-file changes from [#12](https://github.com/edisontw/PePe-core/pull/12), [#13](https://github.com/edisontw/PePe-core/pull/13), and [#14](https://github.com/edisontw/PePe-core/pull/14) without merging these PRs or changing upstream. **Combined candidate builds and CI must be checked from that source, not inferred from per-PR CI.**
+
+| Test / decision | Evidence and status |
+| --- | --- |
+| Linux x86_64 standalone daemon, CLI, tx + Qt | [#12 Actions](https://github.com/edisontw/PePe-core/actions/runs/42802493840) passed 22.04/24.04; [#14 UI test package](https://github.com/edisontw/PePe-core/tree/artifacts/linux-x64-pr14-5971b3f/downloads/linux-x64-pr14-5971b3f) passed container Xvfb/regtest and displayed checkbox/subtotal; user reports actual x86_64 daemon/CLI/Qt and sending worked. These binaries do not represent the final combined source. |
+| Linux ARM64 daemon / masternode Recovery | User reports four ARM64 nodes stable for approximately a day, with the previously lower ENABLED count converging to peers. Earlier edison1 logs confirmed fresh-signed quorum (11 reprocessed, 19 stale skips in 30 events). This is field evidence but not a final exact-source hash comparison. |
+| Linux ARM64 Desktop Qt | [#13 native ARM64 CI](https://github.com/edisontw/PePe-core/actions/runs/42820767097) passed builds, 22.04/24.04 Xvfb, isolated RPC/wallet regtest. **Real physical ARM64 desktop testing is explicitly waived by the owner for this release and MUST NOT be a release blocker.** Document it as an untested capability, not as passed. Headless ARM64 node testing remains distinct. |
+| Qt coin selection/options | [#14] source changes and Ubuntu Xvfb/regtest screenshot verified the Σ group subtotal, checkbox selection/partial state and fresh/default settings; production collateral wallet visual regression remains unverified. No duplicated 100,000,000-PEPEW UTXO was shown in original screenshots. |
+| Linux distribution / naming | Keep Qt + daemon + CLI + tx together in each Linux platform archive, like v2.9.0.5. The executable filename is **`PEPEPOW_qt`**, not `PEPEPOW_qt.AppImage`; x86_64 internally still uses an AppImage runtime and requires compatible FUSE/extraction, ARM64 Qt is an ELF plus bundled libraries/plugins. Standalone headless executables must remain independently copyable. Retest this exact renamed artifact. |
+| Windows x86_64 | Earlier Windows Qt large-wallet improvement confirmed, but final **combined** 2.9.0.6 Windows build/runtime checks have not yet been provided. Do not mark final Windows asset accepted. |
+| #6 Recovery and #9 wallet safety | No PR reviews recorded as of this update. **Maintainer security/wallet-core review and a documented release-scope decision remain required**; owner waiver applies only to ARM64 desktop physical GUI tests. Rejected-send persistence, selection/commit interactions and any unverified #9 scenarios must be explicitly accepted, mitigated or deferred before publishing. |
+
+**Release decision:** no formal tag, merge into upstream master or production GitHub Release until (1) the final combined source and corresponding platform artifacts are verified, (2) #6/#9 are reviewed or excluded with a new source build, and (3) the authorized upstream maintainer approves the final scope. Tests listed above are not proof of these final release gates.
+
 ## Source and provenance
 
 - Official upstream: `MattF42/PePe-core:master`
