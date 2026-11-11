@@ -2,6 +2,8 @@
 
 Internal maintenance record for `edisontw/PePe-core`, **not** an upstream release artifact.
 
+**COMPLETED:** [GitHub Actions #43017734882](https://github.com/edisontw/PePe-core/actions/runs/43017734882) SUCCESS. Removed 43 listed obsolete branch refs after live SHA/protection/open-PR checks. One-shot cleanup branch also removed. Final list: exactly 12 branches, verified via GitHub branches API. No changes to either master, tags, Releases or live open-PR heads.
+
 Initial observed heads: 55 branches. Intended survivors: `master`, nine open PR heads (#4–#11 and #15) and the two still-useful test-download branches `artifacts/multiplatform-b064eef` (shared externally) and `artifacts/integrated-win64-3bf4ab3` (Windows RC comparison). These 12 must never be deleted by cleanup.
 
 Other branches were classified as old intermediate builds, already-merged historical work, superseded closed-PR branches, or abandoned non-release experiments. Some diverged experiments have unique commits: removal is an explicit housekeeping decision, **not** a statement that their code was merged.
