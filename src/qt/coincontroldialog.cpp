@@ -80,9 +80,10 @@ public:
             if (wallet->CreateConsolidationTransaction(batch, destination, tx,
                     reservekey, fee, reason, feeCap)) {
                 // A rejected transaction is never retried after CommitTransaction.
+                std::string commitError;
                 if (!wallet->CommitTransaction(tx, reservekey, g_connman.get(),
-                                               NetMsgType::TX)) {
-                    error = QString::fromLatin1("Transaction rejected; check wallet and network state. No automatic retry.");
+                                               NetMsgType::TX, &commitError)) {
+                    error = QString::fromStdString(commitError);
                     break;
                 }
                 txid = QString::fromStdString(tx.GetHash().GetHex());

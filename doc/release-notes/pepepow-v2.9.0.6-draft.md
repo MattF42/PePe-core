@@ -14,9 +14,14 @@
 
 - **Linux x86_64:** [build and Ubuntu 22.04/24.04 tests PASS](https://github.com/edisontw/PePe-core/actions/runs/42864061348); Owner reports Qt/daemon/CLI and transaction sending work.
 - **Linux ARM64:** [native build and Ubuntu 22.04/24.04 tests PASS](https://github.com/edisontw/PePe-core/actions/runs/42864061217); four running ARM64 nodes now report around 45 ENABLED versus 47 observed on other nodes. These are observations, not controlled same-height proof.
-- **UTXO consolidation:** Owner has tested interruption and restart. Failure-injection and wallet-persistence edge cases remain under engineering review.
+- **UTXO consolidation:** Owner has tested interruption and restart. A separate deterministic fault-injection test reproduced a false-success RPC result after wallet DB write failure; an **A-only candidate mitigation** is being reviewed and has not passed live Regtest acceptance. Full transaction durability under disk failure is not guaranteed.
 - **ARM64 physical Qt Desktop:** untested; Owner accepts this as a non-blocking limitation.
 - **Windows:** the earlier large-wallet fix passed manual testing, but this combined v2.9.0.6 RC still needs exact-source Windows build/runtime acceptance.
+
+## Important final-scope decisions
+
+- Final release must exclude test-only injection hooks, temporary logs and PR #16's experimental B/C fixes unless explicitly accepted.
+- A controlled Qt shutdown timing test originally reproduced an abort in consolidation. Its candidate fix passed four deterministic windows, but is **not** in the A-only source. Decide to include the already-tested fix or defer #9 consolidation before publishing; no additional B/C tests are planned.
 
 ## Upgrade and safety notes
 

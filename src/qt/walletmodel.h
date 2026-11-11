@@ -17,6 +17,7 @@
 #include <vector>
 
 #include <QObject>
+#include <QString>
 #include <QElapsedTimer>
 #include "uint256.h"
 
@@ -156,9 +157,10 @@ public:
     // Return status record for SendCoins, contains error id + information
     struct SendCoinsReturn
     {
-        SendCoinsReturn(StatusCode status = OK):
-            status(status) {}
+        SendCoinsReturn(StatusCode status = OK, const QString& error = QString()):
+            status(status), errorMessage(error) {}
         StatusCode status;
+        QString errorMessage;
     };
 
     // prepare transaction for getting txfee before sending coins

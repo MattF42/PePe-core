@@ -402,8 +402,8 @@ static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtr
             strError = strprintf("Error: This transaction requires a transaction fee of at least %s because of its amount, complexity, or use of recently received funds!", FormatMoney(nFeeRequired));
         throw JSONRPCError(RPC_WALLET_ERROR, strError);
     }
-    if (!pwalletMain->CommitTransaction(wtxNew, reservekey, g_connman.get(), fUseInstantSend ? NetMsgType::TXLOCKREQUEST : NetMsgType::TX))
-        throw JSONRPCError(RPC_WALLET_ERROR, "Error: The transaction was rejected! This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.");
+    if (!pwalletMain->CommitTransaction(wtxNew, reservekey, g_connman.get(), fUseInstantSend ? NetMsgType::TXLOCKREQUEST : NetMsgType::TX, &strError))
+        throw JSONRPCError(RPC_WALLET_ERROR, strError);
 }
 
 UniValue sendtoaddress(const UniValue& params, bool fHelp)
@@ -1139,8 +1139,8 @@ UniValue sendmany(const UniValue& params, bool fHelp)
                                                    NULL, true, fUsePrivateSend ? ONLY_DENOMINATED : ALL_COINS, fUseInstantSend);
     if (!fCreated)
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, strFailReason);
-    if (!pwalletMain->CommitTransaction(wtx, keyChange, g_connman.get(), fUseInstantSend ? NetMsgType::TXLOCKREQUEST : NetMsgType::TX))
-        throw JSONRPCError(RPC_WALLET_ERROR, "Transaction commit failed");
+    if (!pwalletMain->CommitTransaction(wtx, keyChange, g_connman.get(), fUseInstantSend ? NetMsgType::TXLOCKREQUEST : NetMsgType::TX, &strFailReason))
+        throw JSONRPCError(RPC_WALLET_ERROR, strFailReason);
 
     return wtx.GetHash().GetHex();
 }
@@ -2781,8 +2781,7 @@ extern UniValue consolidate(const UniValue& params, bool fHelp)
     if (!pwalletMain->CreateConsolidationTransaction(selected, address.Get(), tx,
                                                      reservekey, fee, error, maxTxFee))
         throw JSONRPCError(RPC_WALLET_ERROR, error);
-    if (!pwalletMain->CommitTransaction(tx, reservekey, g_connman.get(), NetMsgType::TX))
-        throw JSONRPCError(RPC_WALLET_ERROR,
-                           "Consolidation transaction rejected without recording spent inputs");
+    if (!pwalletMain->CommitTransaction(tx, reservekey, g_connman.get(), NetMsgType::TX, &error))
+        throw JSONRPCError(RPC_WALLET_ERROR, error);
     return tx.GetHash().GetHex();
 }

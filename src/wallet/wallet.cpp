@@ -3666,8 +3666,10 @@ bool CWallet::CreateConsolidationTransaction(const std::vector<COutPoint>& input
 /**
  * Call after CreateTransaction unless you want to abort
  */
-bool CWallet::CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey, CConnman* connman, std::string strCommand)
+bool CWallet::CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey, CConnman* connman, std::string strCommand, std::string* strCommitError)
 {
+    if (strCommitError)
+        strCommitError->clear();
     {
         LOCK2(cs_main, cs_wallet);
         LogPrintf("CommitTransaction:\n%s", wtxNew.ToString());
@@ -3677,6 +3679,8 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey, CCon
         if (fBroadcastTransactions && !wtxNew.AcceptToMemoryPool(false))
         {
             LogPrintf("CommitTransaction(): rejected before recording wallet spend\n");
+            if (strCommitError)
+                *strCommitError = "Transaction rejected by mempool; wallet spend was not recorded.";
             return false;
         }
         {
@@ -3690,7 +3694,26 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey, CCon
 
             // Add tx to wallet, because if it has change it's also ours,
             // otherwise just for transaction history.
-            AddToWallet(wtxNew, false, pwalletdb);
+            // Mempool admission is already complete; a disk failure cannot be
+            // treated as an ordinary rejection or silently reported as success.
+            if (!AddToWallet(wtxNew, false, pwalletdb))
+            {
+                const std::string error = strprintf(
+                    "Wallet database write failed after mempool acceptance; txid=%s. "
+                    "The wallet record is not safely persisted. Broadcast was not requested, "
+                    "but propagation cannot be ruled out. Do not retry until checking this "
+                    "transaction ID against the network.", wtxNew.GetHash().GetHex());
+                LogPrintf("ERROR: CommitTransaction(): %s\n", error);
+                if (strCommitError)
+                    *strCommitError = error;
+                if (fFileBacked)
+                    delete pwalletdb;
+                // AddToWallet already inserted the transaction into memory and
+                // updated spend maps, so keep that state until the outcome is
+                // reconciled. Never undo or retry an admitted transaction here.
+                MarkDirty();
+                return false; // Do not relay or claim success.
+            }
 
             // Notify that old coins are spent
             set<uint256> updated_hahes;
