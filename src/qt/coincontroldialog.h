@@ -47,6 +47,8 @@ public:
     // static because also called from sendcoinsdialog
     static void updateLabels(WalletModel*, QDialog*);
     static int pruneInvalidSelections(WalletModel*);
+    // Stop accepting consolidation work and wait before wallet teardown.
+    static void stopConsolidationWorkers();
 
     static QList<CAmount> payAmounts;
     static CCoinControl *coinControl;

@@ -1,6 +1,6 @@
 # PEPEPOW Core v2.9.0.6 — DRAFT release notes
 
-> Candidate changes only. Official release and final assets are not yet available.
+> **Optional Upgrade — draft candidate only.** Official release and final assets are not yet available. Changes A/B/C have been selected by the Owner for inclusion; do not imply post-release edge testing has occurred.
 
 ## Highlights
 
@@ -14,14 +14,16 @@
 
 - **Linux x86_64:** [build and Ubuntu 22.04/24.04 tests PASS](https://github.com/edisontw/PePe-core/actions/runs/42864061348); Owner reports Qt/daemon/CLI and transaction sending work.
 - **Linux ARM64:** [native build and Ubuntu 22.04/24.04 tests PASS](https://github.com/edisontw/PePe-core/actions/runs/42864061217); four running ARM64 nodes now report around 45 ENABLED versus 47 observed on other nodes. These are observations, not controlled same-height proof.
-- **UTXO consolidation:** Owner has tested interruption and restart. A separate deterministic fault-injection test reproduced a false-success RPC result after wallet DB write failure; an **A-only candidate mitigation** is being reviewed and has not passed live Regtest acceptance. Full transaction durability under disk failure is not guaranteed.
+- **UTXO consolidation:** Owner passed ordinary interruption/restart. A DB-write fault test reproduced incorrect successful RPC reporting; v2.9.0.6 includes the preliminary error-with-txid mitigation, with follow-up live testing deferred. Transaction persistence under actual disk failure is not atomic/guaranteed.
+- **Qt shutdown / Recovery:** the consolidation worker shutdown mitigation passed four controlled cases; Recovery orphan guard passed 22 assertions. The Owner elected inclusion without more pre-release edge tests.
 - **ARM64 physical Qt Desktop:** untested; Owner accepts this as a non-blocking limitation.
 - **Windows:** the earlier large-wallet fix passed manual testing, but this combined v2.9.0.6 RC still needs exact-source Windows build/runtime acceptance.
 
-## Important final-scope decisions
+## Release scope and validation
 
-- Final release must exclude test-only injection hooks, temporary logs and PR #16's experimental B/C fixes unless explicitly accepted.
-- A controlled Qt shutdown timing test originally reproduced an abort in consolidation. Its candidate fix passed four deterministic windows, but is **not** in the A-only source. Decide to include the already-tested fix or defer #9 consolidation before publishing; no additional B/C tests are planned.
+This Optional version carries the selected wallet A warning, Qt consolidation B worker shutdown fix, and Recovery C orphan-reply guard. It is not intended as a mandatory hard fork or a network protocol change; maintainers must verify the final diff.
+
+Exact A+B+C Linux candidate builds and Windows integrated binary acceptance remain pending. Experimental fault-injection hooks, test-only logs and internal diagnostics are not part of the public package.
 
 ## Upgrade and safety notes
 

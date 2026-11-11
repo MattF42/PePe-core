@@ -28,6 +28,8 @@
 #include <set>
 #include <algorithm>
 #include <QMetaObject>
+#include <QMutex>
+#include <QMutexLocker>
 #include <QPointer>
 #include <QProgressDialog>
 #include <QRunnable>
@@ -49,6 +51,42 @@
 QList<CAmount> CoinControlDialog::payAmounts;
 CCoinControl* CoinControlDialog::coinControl = new CCoinControl();
 bool CoinControlDialog::fSubtractFeeFromAmount = false;
+
+namespace {
+struct ConsolidationPoolState {
+    QMutex mutex;
+    QThreadPool pool;
+    bool stopping = false;
+};
+
+ConsolidationPoolState& consolidationPoolState()
+{
+    static ConsolidationPoolState state;
+    return state;
+}
+
+bool queueConsolidation(QRunnable* work)
+{
+    ConsolidationPoolState& state = consolidationPoolState();
+    QMutexLocker lock(&state.mutex);
+    if (state.stopping) {
+        delete work;
+        return false;
+    }
+    state.pool.start(work);
+    return true;
+}
+}
+
+void CoinControlDialog::stopConsolidationWorkers()
+{
+    ConsolidationPoolState& state = consolidationPoolState();
+    {
+        QMutexLocker lock(&state.mutex);
+        state.stopping = true;
+    }
+    state.pool.waitForDone();
+}
 
 // One bounded signing/broadcast job runs off the GUI event loop. All the
 // actual input validation, signed-size checks and fee limits live in CWallet.
@@ -464,7 +502,7 @@ void CoinControlDialog::launchConsolidationBatch()
     if (consolidationProgress)
         consolidationProgress->setLabelText(tr("Creating transaction %1 (up to %2 inputs)...")
                                            .arg(consolidationTxCount + 1).arg(static_cast<qulonglong>(inputs.size())));
-    QThreadPool::globalInstance()->start(new ConsolidationBatchWork(
+    queueConsolidation(new ConsolidationBatchWork(
         this, pwalletMain, inputs, consolidationDestination,
         std::min(consolidationBatchFeeCap, consolidationFeeBudget - consolidationFees)));
 }

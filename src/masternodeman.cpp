@@ -270,7 +270,13 @@ void CMasternodeMan::CheckAndRemove(CConnman& connman)
         LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- mMnbRecoveryGoodReplies size=%d\n", (int)mMnbRecoveryGoodReplies.size());
         std::map<uint256, std::vector<CMasternodeBroadcast> >::iterator itMnbReplies = mMnbRecoveryGoodReplies.begin();
         while(itMnbReplies != mMnbRecoveryGoodReplies.end()){
-            if(mMnbRecoveryRequests[itMnbReplies->first].first < GetTime()) {
+            auto request = mMnbRecoveryRequests.find(itMnbReplies->first);
+            if (request == mMnbRecoveryRequests.end()) {
+                LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- discarding orphan recovery replies for %s\n", itMnbReplies->first.ToString());
+                mMnbRecoveryGoodReplies.erase(itMnbReplies++);
+                continue;
+            }
+            if(request->second.first < GetTime()) {
                 // all nodes we asked should have replied now
                 if(itMnbReplies->second.size() >= MNB_RECOVERY_QUORUM_REQUIRED) {
                     // A projected ENABLED state alone does not validate the ping's block height

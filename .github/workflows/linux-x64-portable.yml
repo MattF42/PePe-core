@@ -24,7 +24,12 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/source" "$RUNNER_TEMP/output"
           git archive HEAD | tar -xf - -C "$RUNNER_TEMP/source"
-          docker build -t pepe-linux-portable contrib/linux-portable
+          echo "Checking Ubuntu build mirror DNS on runner (diagnostic only)"
+          getent ahostsv4 archive.ubuntu.com | head -3 || true
+          getent ahostsv4 security.ubuntu.com | head -3 || true
+          # Preserve the image/toolchain and source exactly; use runner host
+          # networking for BuildKit, since isolated builder DNS failed in RC.
+          docker build --network=host --progress=plain -t pepe-linux-portable contrib/linux-portable
       - name: Build and package
         run: |
           docker run --rm --user "$(id -u):$(id -g)" -e "PEPE_SOURCE_SHA=$(git rev-parse HEAD)" \

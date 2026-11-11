@@ -23,6 +23,7 @@
 #include "winshutdownmonitor.h"
 
 #ifdef ENABLE_WALLET
+#include "coincontroldialog.h"
 #include "paymentserver.h"
 #include "walletmodel.h"
 #endif
@@ -298,6 +299,9 @@ void BitcoinCore::restart(QStringList args)
         try
         {
             qDebug() << __func__ << ": Running Restart in thread";
+#ifdef ENABLE_WALLET
+            CoinControlDialog::stopConsolidationWorkers();
+#endif
             threadGroup.interrupt_all();
             threadGroup.join_all();
             PrepareShutdown();
@@ -460,6 +464,11 @@ void BitcoinApplication::requestShutdown()
     shutdownWindow.reset(ShutdownWindow::showShutdownWindow(window));
 
     qDebug() << __func__ << ": Requesting shutdown";
+#ifdef ENABLE_WALLET
+    // The worker holds a raw CWallet pointer and may still use walletModel
+    // notifications. Drain it before either the GUI or core tears them down.
+    CoinControlDialog::stopConsolidationWorkers();
+#endif
     startThread();
     window->hide();
     window->setClientModel(0);
