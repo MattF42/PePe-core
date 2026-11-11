@@ -1,0 +1,49 @@
+name: Windows x86_64 candidate build
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
+    paths:
+      - '.github/workflows/windows-x64-portable.yml'
+      - 'contrib/windows-portable/**'
+      - 'contrib/ci/**'
+      - 'depends/**'
+      - 'src/**'
+      - 'configure.ac'
+      - 'Makefile.am'
+      - 'build-aux/**'
+permissions:
+  contents: read
+jobs:
+  build:
+    if: github.event_name == 'workflow_dispatch' || !github.event.pull_request.draft || contains(github.event.pull_request.labels.*.name, 'build-candidates')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Dependency network preflight
+        run: contrib/ci/network-preflight.sh x86_64
+      - name: Restore depends source and build cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/pepe-depends-cache
+          key: win64-depends-v1-${{ hashFiles('depends/**', 'contrib/windows-portable/Dockerfile') }}
+      - name: Build and inspect Windows binaries
+        run: |
+          mkdir -p "$RUNNER_TEMP/source" "$RUNNER_TEMP/output" "$RUNNER_TEMP/pepe-depends-cache"
+          git archive HEAD | tar -xf - -C "$RUNNER_TEMP/source"
+          docker build --progress=plain -t pepe-win64-builder contrib/windows-portable
+          docker run --rm --user "$(id -u):$(id -g)" -e "PEPE_SOURCE_SHA=$(git rev-parse HEAD)" \
+            -e PEPE_DEPENDS_CACHE=/depends-cache -v "$RUNNER_TEMP/pepe-depends-cache:/depends-cache" \
+            -v "$RUNNER_TEMP/source:/source:ro" -v "$RUNNER_TEMP/output:/output" \
+            pepe-win64-builder /source/contrib/windows-portable/build.sh
+          contrib/ci/package-candidate.sh "$RUNNER_TEMP/output" "$(git rev-parse HEAD)" x86_64-w64-mingw32 "$GITHUB_WORKSPACE"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pepe-windows-x86_64-candidate
+          path: |
+            PEPEPOW-v*-test-x86_64-w64-mingw32.zip
+            SHA256SUMS.txt
+          if-no-files-found: error

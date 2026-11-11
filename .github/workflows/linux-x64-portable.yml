@@ -2,9 +2,11 @@ name: Linux x86_64 portable test build
 on:
   workflow_dispatch:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
     paths:
       - '.github/workflows/linux-x64-portable.yml'
       - 'contrib/linux-portable/**'
+      - 'contrib/ci/**'
       - 'src/**'
       - 'configure.ac'
       - 'Makefile.am'
@@ -13,6 +15,7 @@ permissions:
   contents: read
 jobs:
   build:
+    if: github.event_name == 'workflow_dispatch' || !github.event.pull_request.draft || contains(github.event.pull_request.labels.*.name, 'build-candidates')
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
@@ -22,6 +25,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Export exact checkout and build toolchain
         run: |
+          contrib/ci/network-preflight.sh x86_64
           mkdir -p "$RUNNER_TEMP/source" "$RUNNER_TEMP/output"
           git archive HEAD | tar -xf - -C "$RUNNER_TEMP/source"
           echo "Checking Ubuntu build mirror DNS on runner (diagnostic only)"
@@ -35,14 +39,13 @@ jobs:
           docker run --rm --user "$(id -u):$(id -g)" -e "PEPE_SOURCE_SHA=$(git rev-parse HEAD)" \
             -v "$RUNNER_TEMP/source:/source:ro" -v "$RUNNER_TEMP/output:/output" \
             pepe-linux-portable /source/contrib/linux-portable/build.sh
-          (cd "$RUNNER_TEMP/output" && tar -czf "$GITHUB_WORKSPACE/pepe-linux-x86_64-portable.tgz" .)
-          sha256sum pepe-linux-x86_64-portable.tgz > SHA256SUMS-archive.txt
+          contrib/ci/package-candidate.sh "$RUNNER_TEMP/output" "$(git rev-parse HEAD)" x86_64-linux-gnu "$GITHUB_WORKSPACE"
       - uses: actions/upload-artifact@v4
         with:
           name: pepe-linux-x86_64-portable
           path: |
-            pepe-linux-x86_64-portable.tgz
-            SHA256SUMS-archive.txt
+            PEPEPOW-v*-test-x86_64-linux-gnu.tgz
+            SHA256SUMS.txt
           if-no-files-found: error
   compatibility:
     needs: build
@@ -62,9 +65,9 @@ jobs:
         env:
           UBUNTU_VERSION: ${{ matrix.ubuntu }}
         run: |
-          sha256sum -c SHA256SUMS-archive.txt
+          sha256sum -c SHA256SUMS.txt
           mkdir -p "$RUNNER_TEMP/artifact" "$RUNNER_TEMP/test-image"
-          tar -xzf pepe-linux-x86_64-portable.tgz -C "$RUNNER_TEMP/artifact"
+          tar -xzf PEPEPOW-v*-test-x86_64-linux-gnu.tgz -C "$RUNNER_TEMP/artifact"
           printf 'FROM ubuntu:%s\nRUN apt-get update && apt-get install -y --no-install-recommends binutils libgl1 fontconfig fonts-dejavu-core xvfb xauth && rm -rf /var/lib/apt/lists/*\n' "$UBUNTU_VERSION" > "$RUNNER_TEMP/test-image/Dockerfile"
           docker build -t pepe-compat "$RUNNER_TEMP/test-image"
           docker run --rm --network=none -v "$RUNNER_TEMP/artifact:/artifact:ro" \
