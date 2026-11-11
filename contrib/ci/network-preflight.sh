@@ -7,6 +7,20 @@ case "${1:-}" in
   *) echo 'Usage: network-preflight.sh x86_64|aarch64' >&2; exit 2 ;;
 esac
 failed=0
+# Diagnostic only: do not silently replace the pinned distribution mirrors.
+for host in azure.archive.ubuntu.com azure.ports.ubuntu.com; do
+    if timeout 6 getent ahostsv4 "$host" > /dev/null; then
+        echo "PASS optional Ubuntu Azure mirror DNS: $host"
+        if [ "$host" = azure.ports.ubuntu.com ]; then altpath=ubuntu-ports; else altpath=ubuntu; fi
+        if curl --fail --silent --show-error --location --max-time 15 --output /dev/null "https://$host/$altpath/dists/focal/InRelease"; then
+            echo "PASS optional Ubuntu Azure mirror HTTPS: $host"
+        else
+            echo "INFO optional Ubuntu Azure mirror HTTPS unavailable: $host"
+        fi
+    else
+        echo "INFO optional Ubuntu Azure mirror DNS unavailable: $host"
+    fi
+done
 for host in "${mirrors[@]}" github.com; do
     if timeout 10 getent ahostsv4 "$host" > /dev/null; then
         echo "PASS runner DNS: $host"
