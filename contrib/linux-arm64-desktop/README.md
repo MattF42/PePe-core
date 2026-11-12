@@ -1,0 +1,5 @@
+# Linux ARM64 desktop test build
+
+The workflow uses native ARM64 GitHub runners and an Ubuntu 20.04 builder. It builds the same repository `depends` libraries used for ARM64 headless builds (including wallet-compatible Berkeley DB 4.8) and links the Qt application against those archives, with distribution Qt dynamically linked. The single tarball contains `PEPEPOW_qt`, `PEPEPOWd`, `PEPEPOW-cli`, and `PEPEPOW-tx` at its root, plus the Qt libraries and plugins needed by the GUI. `PEPEPOW_qt` is an ARM64 ELF, not an AppImage or wrapper; `qt.conf`, `lib/` and `plugins/` must stay next to it. Essential Linux system libraries and graphics services remain host dependencies.
+
+CI verifies SHA256, ELF architecture and headless dynamic dependencies, and runs isolated daemon RPC, wallet, block generation, shutdown, transaction utility and Xvfb Qt RPC/wallet tests in Ubuntu 22.04 and 24.04 ARM64 containers. These tests do not cover real desktops, graphics drivers, hardware-specific behavior, live-network nodes, wallet migration or real transactions. The build is for testing, not an official release.

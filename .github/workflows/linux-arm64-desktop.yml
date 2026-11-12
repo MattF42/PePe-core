@@ -1,0 +1,76 @@
+name: Linux ARM64 desktop test build
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
+    paths:
+      - '.github/workflows/linux-arm64-desktop.yml'
+      - 'contrib/linux-arm64-desktop/**'
+      - 'contrib/ci/**'
+      - 'depends/**'
+      - 'src/**'
+      - 'configure.ac'
+      - 'Makefile.am'
+      - 'build-aux/**'
+permissions:
+  contents: read
+jobs:
+  build:
+    if: github.event_name == 'workflow_dispatch' || !github.event.pull_request.draft || contains(github.event.pull_request.labels.*.name, 'build-candidates')
+    runs-on: ubuntu-22.04-arm
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Export exact source and build ARM64 toolchain
+        run: |
+          contrib/ci/network-preflight.sh aarch64
+          test "$(uname -m)" = aarch64
+          mkdir -p "$RUNNER_TEMP/source" "$RUNNER_TEMP/output"
+          git archive HEAD | tar -xf - -C "$RUNNER_TEMP/source"
+          echo "Checking Ubuntu ARM64 build mirror DNS on runner (diagnostic only)"
+          getent ahostsv4 ports.ubuntu.com | head -3 || true
+          # Preserve native ARM64 toolchain and source; attempt BuildKit via
+          # runner host network to mitigate builder-only DNS failures.
+          docker build --network=host --progress=plain -t pepe-arm64-desktop contrib/linux-arm64-desktop
+      - name: Build and package
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" -e "PEPE_SOURCE_SHA=$(git rev-parse HEAD)" \
+            -v "$RUNNER_TEMP/source:/source:ro" -v "$RUNNER_TEMP/output:/output" \
+            pepe-arm64-desktop /source/contrib/linux-arm64-desktop/build.sh
+          contrib/ci/package-candidate.sh "$RUNNER_TEMP/output" "$(git rev-parse HEAD)" aarch64-linux-gnu "$GITHUB_WORKSPACE"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pepe-linux-arm64-desktop
+          path: |
+            PEPEPOW-v*-test-aarch64-linux-gnu.tgz
+            SHA256SUMS.txt
+          if-no-files-found: error
+  compatibility:
+    needs: build
+    runs-on: ubuntu-24.04-arm
+    strategy:
+      fail-fast: false
+      matrix:
+        ubuntu: ['22.04', '24.04']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pepe-linux-arm64-desktop
+      - name: Test on native ARM64 in a clean Ubuntu container
+        env:
+          UBUNTU_VERSION: ${{ matrix.ubuntu }}
+        run: |
+          test "$(uname -m)" = aarch64
+          sha256sum -c SHA256SUMS.txt
+          mkdir -p "$RUNNER_TEMP/artifact" "$RUNNER_TEMP/test-image"
+          tar -xzf PEPEPOW-v*-test-aarch64-linux-gnu.tgz -C "$RUNNER_TEMP/artifact"
+          printf 'FROM ubuntu:%s\nRUN apt-get update && apt-get install -y --no-install-recommends binutils libgl1 fontconfig fonts-dejavu-core xvfb xauth && rm -rf /var/lib/apt/lists/*\n' "$UBUNTU_VERSION" > "$RUNNER_TEMP/test-image/Dockerfile"
+          docker build -t pepe-arm64-compat "$RUNNER_TEMP/test-image"
+          docker run --rm --network=none -v "$RUNNER_TEMP/artifact:/artifact:ro" \
+            -v "$GITHUB_WORKSPACE/contrib/linux-arm64-desktop/smoke.sh:/smoke.sh:ro" \
+            pepe-arm64-compat bash /smoke.sh

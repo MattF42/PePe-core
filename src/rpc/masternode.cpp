@@ -23,6 +23,32 @@
 #include <iomanip>
 #include <univalue.h>
 
+// Look up the live collateral rather than relying on the cached masternode amount.
+// Caller must hold cs_main (GetCollateralAmount reads the UTXO set).
+static std::string GetMasternodeTierFromCollateral(const COutPoint& outpoint, int64_t* collateralPEPEW = nullptr)
+{
+    AssertLockHeld(cs_main);
+
+    int nUnusedAmount = 0; // GetCollateralAmount classifies via the return enum.
+    switch (CMasternode::GetCollateralAmount(outpoint, nUnusedAmount)) {
+        case CMasternode::COLLATERAL_10M:
+            if (collateralPEPEW) *collateralPEPEW = 10000000;
+            return "T1";
+        case CMasternode::COLLATERAL_25M:
+            if (collateralPEPEW) *collateralPEPEW = 25000000;
+            return "T2";
+        case CMasternode::COLLATERAL_50M:
+            if (collateralPEPEW) *collateralPEPEW = 50000000;
+            return "T3";
+        case CMasternode::COLLATERAL_100M:
+            if (collateralPEPEW) *collateralPEPEW = 100000000;
+            return "T4";
+        default:
+            if (collateralPEPEW) *collateralPEPEW = 0;
+            return "unknown";
+    }
+}
+
 #ifdef ENABLE_WALLET
 void EnsureWalletIsUnlocked();
 
@@ -141,7 +167,7 @@ UniValue masternode(const UniValue& params, bool fHelp)
                 "  start-alias  - Start single remote masternode by assigned alias configured in masternode.conf\n"
                 "  start-<mode> - Start remote masternodes configured in masternode.conf (<mode>: 'all', 'missing', 'disabled')\n"
 #endif // ENABLE_WALLET
-                "  status       - Print masternode status information\n"
+                "  status       - Print masternode status information, including tier and collateral\n"
                 "  list         - Print list of all known masternodes (see masternodelist for more info)\n"
                 "  list-conf    - Print masternode.conf in JSON format\n"
                 "  winner       - Print info on next masternode winner to vote for\n"
@@ -397,7 +423,20 @@ UniValue masternode(const UniValue& params, bool fHelp)
             mnObj.push_back(Pair("payee", CBitcoinAddress(mn.pubKeyCollateralAddress.GetID()).ToString()));
         }
 
+        std::string strTier;
+        int64_t nCollateralPEPEW = 0;
+        {
+            LOCK(cs_main);
+            strTier = GetMasternodeTierFromCollateral(activeMasternode.outpoint, &nCollateralPEPEW);
+        }
+
         mnObj.push_back(Pair("status", activeMasternode.GetStatus()));
+        mnObj.push_back(Pair("tier", strTier));
+        if (nCollateralPEPEW != 0) {
+            mnObj.push_back(Pair("collateral", nCollateralPEPEW));
+        } else {
+            mnObj.push_back(Pair("collateral", NullUniValue));
+        }
         return mnObj;
     }
 
@@ -452,7 +491,7 @@ UniValue masternodelist(const UniValue& params, bool fHelp)
                 strMode != "activeseconds" && strMode != "addr" && strMode != "full" && strMode != "info" &&
                 strMode != "lastseen" && strMode != "lastpaidtime" && strMode != "lastpaidblock" &&
                 strMode != "protocol" && strMode != "payee" && strMode != "pubkey" &&
-                strMode != "rank" && strMode != "status"))
+                strMode != "rank" && strMode != "status" && strMode != "tier"))
     {
         throw std::runtime_error(
                 "masternodelist ( \"mode\" \"filter\" )\n"
@@ -477,6 +516,7 @@ UniValue masternodelist(const UniValue& params, bool fHelp)
                 "  protocol       - Print protocol of a masternode (can be additionally filtered, exact match)\n"
                 "  pubkey         - Print the masternode (not collateral) public key\n"
                 "  rank           - Print rank of a masternode based on current block\n"
+                "  tier           - Print collateral tier (T1-T4 or unknown) for each masternode\n"
                 "  status         - Print masternode status: PRE_ENABLED / ENABLED / EXPIRED / WATCHDOG_EXPIRED / NEW_START_REQUIRED /\n"
                 "                   UPDATE_REQUIRED / POSE_BAN / OUTPOINT_SPENT (can be additionally filtered, partial match)\n"
                 );
@@ -565,6 +605,14 @@ UniValue masternodelist(const UniValue& params, bool fHelp)
             } else if (strMode == "pubkey") {
                 if (strFilter !="" && strOutpoint.find(strFilter) == std::string::npos) continue;
                 obj.push_back(Pair(strOutpoint, HexStr(mn.pubKeyMasternode)));
+            } else if (strMode == "tier") {
+                if (strFilter != "" && strOutpoint.find(strFilter) == std::string::npos) continue;
+                std::string strTier;
+                {
+                    LOCK(cs_main);
+                    strTier = GetMasternodeTierFromCollateral(mnpair.first);
+                }
+                obj.push_back(Pair(strOutpoint, strTier));
             } else if (strMode == "status") {
                 std::string strStatus = mn.GetStatus();
                 if (strFilter !="" && strStatus.find(strFilter) == std::string::npos &&

@@ -178,6 +178,8 @@ void CMasternodeMan::CheckAndRemove(CConnman& connman)
         rank_pair_vec_t vecMasternodeRanks;
         // ask for up to MNB_RECOVERY_MAX_ASK_ENTRIES masternode entries at a time
         int nAskForMnbRecovery = MNB_RECOVERY_MAX_ASK_ENTRIES;
+        int nRecoveryNewStartRequired = 0;
+        int nRecoveryAlreadyRequested = 0;
         std::map<COutPoint, CMasternode>::iterator it = mapMasternodes.begin();
         while (it != mapMasternodes.end()) {
             CMasternodeBroadcast mnb = CMasternodeBroadcast(it->second);
@@ -195,6 +197,10 @@ void CMasternodeMan::CheckAndRemove(CConnman& connman)
                 mapMasternodes.erase(it++);
                 fMasternodesRemoved = true;
             } else {
+                if (it->second.IsNewStartRequired()) {
+                    nRecoveryNewStartRequired++;
+                    if (IsMnbRecoveryRequested(hash)) nRecoveryAlreadyRequested++;
+                }
                 bool fAsk = (nAskForMnbRecovery > 0) &&
                             masternodeSync.IsSynced() &&
                             it->second.IsNewStartRequired() &&
@@ -207,41 +213,107 @@ void CMasternodeMan::CheckAndRemove(CConnman& connman)
                         int nRandomBlockHeight = GetRandInt(nCachedBlockHeight);
                         GetMasternodeRanks(vecMasternodeRanks, nRandomBlockHeight);
                     }
-                    bool fAskedForMnbRecovery = false;
-                    // ask first MNB_RECOVERY_QUORUM_TOTAL masternodes we can connect to and we haven't asked recently
+                    std::vector<CService> vecToRequest;
+                    int nCandidatesScanned = 0;
+                    int nEnabledCandidates = 0;
+                    // Only active, distinct masternodes can be relied on for recovery quorum.
                     for(int i = 0; setRequested.size() < MNB_RECOVERY_QUORUM_TOTAL && i < (int)vecMasternodeRanks.size(); i++) {
-                        // avoid banning
+                        nCandidatesScanned++;
+                        if(!vecMasternodeRanks[i].second.IsEnabled()) continue;
+                        nEnabledCandidates++;
+                        // Avoid asking the same peer too often.
                         if(mWeAskedForMasternodeListEntry.count(it->first) && mWeAskedForMasternodeListEntry[it->first].count(vecMasternodeRanks[i].second.addr)) continue;
-                        // didn't ask recently, ok to ask now
                         CService addr = vecMasternodeRanks[i].second.addr;
-                        setRequested.insert(addr);
-                        listScheduledMnbRequestConnections.push_back(std::make_pair(addr, hash));
-                        fAskedForMnbRecovery = true;
+                        if(setRequested.insert(addr).second) {
+                            vecToRequest.push_back(addr);
+                        }
                     }
-                    if(fAskedForMnbRecovery) {
-                        LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- Recovery initiated, masternode=%s\n", it->first.ToStringShort());
+                    if(setRequested.size() >= MNB_RECOVERY_QUORUM_REQUIRED) {
+                        for(const CService& addr : vecToRequest) {
+                            listScheduledMnbRequestConnections.push_back(std::make_pair(addr, hash));
+                        }
+                        LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- Recovery initiated, masternode=%s, requested=%d/%d, scanned=%d, enabled=%d\n",
+                                 it->first.ToStringShort(), (int)setRequested.size(), (int)MNB_RECOVERY_QUORUM_REQUIRED, nCandidatesScanned, nEnabledCandidates);
                         nAskForMnbRecovery--;
+                        // Wait for replies only when there are enough candidates to reach quorum.
+                        mMnbRecoveryRequests[hash] = std::make_pair(GetTime() + MNB_RECOVERY_WAIT_SECONDS, setRequested);
+                    } else {
+                        LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- Recovery deferred, masternode=%s, requested=%d/%d, scanned=%d, enabled=%d\n",
+                                 it->first.ToStringShort(), (int)setRequested.size(), (int)MNB_RECOVERY_QUORUM_REQUIRED, nCandidatesScanned, nEnabledCandidates);
                     }
-                    // wait for mnb recovery replies for MNB_RECOVERY_WAIT_SECONDS seconds
-                    mMnbRecoveryRequests[hash] = std::make_pair(GetTime() + MNB_RECOVERY_WAIT_SECONDS, setRequested);
                 }
                 ++it;
             }
         }
+        // One summary per maintenance pass to diagnose recovery gate failures.
+        LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- Recovery gate: synced=%d, new_start=%d, already_requested=%d, pending_records=%d, budget_remaining=%d\n",
+                 masternodeSync.IsSynced(), nRecoveryNewStartRequired, nRecoveryAlreadyRequested, (int)mMnbRecoveryRequests.size(), nAskForMnbRecovery);
+        // Diagnostic only: peer sets are remaining, not necessarily the original request size.
+        int nEmptyRecoveryPeerSets = 0;
+        int nRecoveryRequestsOverdue = 0;
+        int64_t nEarliestRecoveryRetrySeconds = 0;
+        int64_t nLatestRecoveryRetrySeconds = 0;
+        bool fFirstRecoveryRequest = true;
+        const int64_t nRecoveryNow = GetTime();
+        for (const auto& request : mMnbRecoveryRequests) {
+            if (request.second.second.empty()) nEmptyRecoveryPeerSets++;
+            const int64_t nRetrySeconds = request.second.first + MNB_RECOVERY_RETRY_SECONDS - nRecoveryNow;
+            if (nRetrySeconds < 0) nRecoveryRequestsOverdue++;
+            if (fFirstRecoveryRequest || nRetrySeconds < nEarliestRecoveryRetrySeconds) nEarliestRecoveryRetrySeconds = nRetrySeconds;
+            if (fFirstRecoveryRequest || nRetrySeconds > nLatestRecoveryRetrySeconds) nLatestRecoveryRetrySeconds = nRetrySeconds;
+            fFirstRecoveryRequest = false;
+        }
+        LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- Recovery backlog: empty_peer_sets=%d, overdue=%d, earliest_retry_sec=%lld, latest_retry_sec=%lld\n",
+                 nEmptyRecoveryPeerSets, nRecoveryRequestsOverdue, (long long)nEarliestRecoveryRetrySeconds, (long long)nLatestRecoveryRetrySeconds);
 
         // proces replies for MASTERNODE_NEW_START_REQUIRED masternodes
         LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- mMnbRecoveryGoodReplies size=%d\n", (int)mMnbRecoveryGoodReplies.size());
         std::map<uint256, std::vector<CMasternodeBroadcast> >::iterator itMnbReplies = mMnbRecoveryGoodReplies.begin();
         while(itMnbReplies != mMnbRecoveryGoodReplies.end()){
-            if(mMnbRecoveryRequests[itMnbReplies->first].first < GetTime()) {
+            auto request = mMnbRecoveryRequests.find(itMnbReplies->first);
+            if (request == mMnbRecoveryRequests.end()) {
+                LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- discarding orphan recovery replies for %s\n", itMnbReplies->first.ToString());
+                mMnbRecoveryGoodReplies.erase(itMnbReplies++);
+                continue;
+            }
+            if(request->second.first < GetTime()) {
                 // all nodes we asked should have replied now
                 if(itMnbReplies->second.size() >= MNB_RECOVERY_QUORUM_REQUIRED) {
-                    // majority of nodes we asked agrees that this mn doesn't require new mnb, reprocess one of new mnbs
-                    LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- reprocessing mnb, masternode=%s\n", itMnbReplies->second[0].vin.prevout.ToStringShort());
-                    // mapSeenMasternodeBroadcast.erase(itMnbReplies->first);
-                    int nDos;
-                    itMnbReplies->second[0].fRecovery = true;
-                    CheckMnbAndUpdateMasternodeList(NULL, itMnbReplies->second[0], nDos, connman);
+                    // A projected ENABLED state alone does not validate the ping's block height
+                    // or signatures. Only count replies that still pass these checks.
+                    int nValidReplies = 0;
+                    int nStalePingBlocks = 0;
+                    size_t nBestReply = itMnbReplies->second.size();
+                    for(size_t i = 0; i < itMnbReplies->second.size(); ++i) {
+                        CMasternodeBroadcast& mnbCandidate = itMnbReplies->second[i];
+                        int nDos = 0;
+                        if(!mnbCandidate.lastPing.SimpleCheck(nDos)) continue;
+                        const auto mi = mapBlockIndex.find(mnbCandidate.lastPing.blockHash);
+                        // Match the existing 24-block limit in CMasternodePing::CheckAndUpdate.
+                        if(mi == mapBlockIndex.end() || !mi->second ||
+                           mi->second->nHeight < chainActive.Height() - 24) {
+                            nStalePingBlocks++;
+                            continue;
+                        }
+                        if(!mnbCandidate.CheckSignature(nDos) ||
+                           !mnbCandidate.lastPing.CheckSignature(mnbCandidate.pubKeyMasternode, nDos)) continue;
+                        nValidReplies++;
+                        if(nBestReply == itMnbReplies->second.size() ||
+                           mnbCandidate.lastPing.sigTime > itMnbReplies->second[nBestReply].lastPing.sigTime) {
+                            nBestReply = i;
+                        }
+                    }
+                    if(nValidReplies >= MNB_RECOVERY_QUORUM_REQUIRED) {
+                        CMasternodeBroadcast mnbRecovery = itMnbReplies->second[nBestReply];
+                        LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- reprocessing mnb, masternode=%s, verified=%d/%d, stale_ping_blocks=%d\n",
+                                 mnbRecovery.vin.prevout.ToStringShort(), nValidReplies, (int)MNB_RECOVERY_QUORUM_REQUIRED, nStalePingBlocks);
+                        int nDos;
+                        mnbRecovery.fRecovery = true;
+                        CheckMnbAndUpdateMasternodeList(NULL, mnbRecovery, nDos, connman);
+                    } else {
+                        LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- Recovery skipped, masternode=%s, verified=%d/%d, stale_ping_blocks=%d, received=%d\n",
+                                 itMnbReplies->second[0].vin.prevout.ToStringShort(), nValidReplies, (int)MNB_RECOVERY_QUORUM_REQUIRED, nStalePingBlocks, (int)itMnbReplies->second.size());
+                    }
                 }
                 LogPrint("masternode", "CMasternodeMan::CheckAndRemove -- removing mnb recovery reply, masternode=%s, size=%d\n", itMnbReplies->second[0].vin.prevout.ToStringShort(), (int)itMnbReplies->second.size());
                 mMnbRecoveryGoodReplies.erase(itMnbReplies++);
@@ -528,7 +600,7 @@ bool CMasternodeMan::GetNextMasternodeInQueueForPayment(int nBlockHeight, bool f
         if(fFilterSigTime && mnpair.second.sigTime + (nMnCount*2.6*60) > GetAdjustedTime()) continue;
 
         int64_t seconds = (int64_t)(mnpair.second.lastPing.sigTime - mnpair.second.sigTime);
-        LogPrint("masternode", "CMasternodeMan::GetNextMasternodeInQueueForPayment --seconds=i", seconds);
+        LogPrint("masternode", "CMasternodeMan::GetNextMasternodeInQueueForPayment -- seconds=%d\n", seconds);
         if(seconds < CMasternodeMan::FIVE_DAY) {
              if(Params().NetworkIDString() == CBaseChainParams::REGTEST) {
                   LogPrintf("Regtest so skipping MN age requirements\n");
@@ -1459,6 +1531,8 @@ bool CMasternodeMan::CheckMnbAndUpdateMasternodeList(CNode* pfrom, CMasternodeBr
                             // this node thinks it's a good one
                             LogPrint("masternode", "CMasternodeMan::CheckMnbAndUpdateMasternodeList -- masternode=%s seen good\n", mnb.vin.prevout.ToStringShort());
                             mMnbRecoveryGoodReplies[hash].push_back(mnb);
+                            LogPrint("masternode", "CMasternodeMan::CheckMnbAndUpdateMasternodeList -- Recovery good reply, masternode=%s, replies=%d/%d\n",
+                                     mnb.vin.prevout.ToStringShort(), (int)mMnbRecoveryGoodReplies[hash].size(), (int)MNB_RECOVERY_QUORUM_REQUIRED);
                         }
                     }
                 }

@@ -890,7 +890,14 @@ public:
      */
     bool CreateTransaction(const std::vector<CRecipient>& vecSend, CWalletTx& wtxNew, CReserveKey& reservekey, CAmount& nFeeRet, int& nChangePosRet,
                            std::string& strFailReason, const CCoinControl *coinControl = NULL, bool sign = true, AvailableCoinsType nCoinType=ALL_COINS, bool fUseInstantSend=false);
-    bool CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey, CConnman* connman, std::string strCommand="tx");
+    bool CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey, CConnman* connman, std::string strCommand="tx", std::string* strCommitError = NULL);
+
+    // Consolidation uses explicit confirmed, spendable inputs and a wallet-owned
+    // destination. Never substitute other coins or broadcast an oversized tx.
+    void AvailableConsolidationCoins(std::vector<COutput>& vCoins) const;
+    bool CreateConsolidationTransaction(const std::vector<COutPoint>& inputs, const CTxDestination& dest,
+                                        CWalletTx& wtxNew, CReserveKey& reservekey, CAmount& fee,
+                                        std::string& reason, CAmount feeCap, unsigned int sizeCap = 80000);
 
     bool CreateCollateralTransaction(CMutableTransaction& txCollateral, std::string& strReason);
     bool ConvertList(std::vector<CTxIn> vecTxIn, std::vector<CAmount>& vecAmounts);

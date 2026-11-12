@@ -301,6 +301,17 @@ void SendCoinsDialog::on_sendButton_clicked()
 
 void SendCoinsDialog::send(QList<SendCoinsRecipient> recipients, QString strFee, QString strFunds)
 {
+    // Console/RPC spends can invalidate manual Coin Control selections.
+    if (model->getOptionsModel()->getCoinControlFeatures() &&
+        CoinControlDialog::pruneInvalidSelections(model) > 0)
+    {
+        coinControlUpdateLabels();
+        QMessageBox::warning(this, tr("Coin selection changed"),
+            tr("Some selected UTXOs are no longer available. Only those inputs were deselected. Please review the remaining selection before sending."));
+        fNewRecipientAllowed = true;
+        return;
+    }
+
     // prepare transaction for getting txFee earlier
     WalletModelTransaction currentTransaction(recipients);
     WalletModel::SendCoinsReturn prepareStatus;
@@ -459,6 +470,7 @@ SendCoinsEntry *SendCoinsDialog::addEntry()
     entry->setModel(model);
     ui->entries->addWidget(entry);
     connect(entry, SIGNAL(removeEntry(SendCoinsEntry*)), this, SLOT(removeEntry(SendCoinsEntry*)));
+    connect(entry, SIGNAL(sendAllRequested(SendCoinsEntry*)), this, SLOT(sendAllClicked(SendCoinsEntry*)));
     connect(entry, SIGNAL(payAmountChanged()), this, SLOT(coinControlUpdateLabels()));
     connect(entry, SIGNAL(subtractFeeFromAmountChanged()), this, SLOT(coinControlUpdateLabels()));
 
@@ -473,6 +485,72 @@ SendCoinsEntry *SendCoinsDialog::addEntry()
 
     updateTabsAndLabels();
     return entry;
+}
+
+void SendCoinsDialog::sendAllClicked(SendCoinsEntry *target)
+{
+    if (!model || !model->getOptionsModel() || !target || target->isHidden() || !fNewRecipientAllowed)
+        return;
+
+    // PrivateSend requires mature denominated inputs and InstantSend has additional
+    // confirmation/amount limits. Do not present the ordinary UTXO sum as usable.
+    if (ui->checkUsePrivateSend->isChecked() || ui->checkUseInstantSend->isChecked())
+    {
+        QMessageBox::information(this, tr("Send All"),
+                                 tr("Send All is available for regular transfers only. Disable PrivateSend and InstantSend first."));
+        return;
+    }
+
+    if (target->getValue().paymentRequest.IsInitialized())
+        return;
+
+    // Supplying coin control (even with no selection) uses AvailableCoins,
+    // excluding locked, immature, and watch-only outputs from the total.
+    CCoinControl spendControl;
+    if (model->getOptionsModel()->getCoinControlFeatures() && CoinControlDialog::coinControl->HasSelected())
+        spendControl = *CoinControlDialog::coinControl;
+    spendControl.fAllowWatchOnly = false;
+
+    const CAmount available = model->getBalance(&spendControl);
+    CAmount otherAmount = 0;
+
+    for (int i = 0; i < ui->entries->count(); ++i)
+    {
+        SendCoinsEntry *entry = qobject_cast<SendCoinsEntry*>(ui->entries->itemAt(i)->widget());
+        if (!entry || entry == target || entry->isHidden())
+            continue;
+
+        const SendCoinsRecipient recipient = entry->getValue();
+        if (recipient.paymentRequest.IsInitialized())
+        {
+            QMessageBox::information(this, tr("Send All"),
+                                     tr("Send All cannot be combined with another recipient's payment request."));
+            return;
+        }
+        if (recipient.amount > 0)
+        {
+            if (recipient.amount > available - otherAmount)
+            {
+                QMessageBox::warning(this, tr("Send All"),
+                                     tr("Other recipients already exceed the available balance."));
+                return;
+            }
+            otherAmount += recipient.amount;
+        }
+    }
+
+    const CAmount amount = available - otherAmount;
+    if (amount <= 0)
+    {
+        QMessageBox::warning(this, tr("Send All"),
+                             tr("No spendable balance remains after accounting for other recipients."));
+        return;
+    }
+
+    // Let the existing transaction creation calculate the actual fee and
+    // subtract it from the recipient amount, rather than guessing the fee here.
+    target->setSendAllAmount(amount);
+    coinControlUpdateLabels();
 }
 
 void SendCoinsDialog::updateTabsAndLabels()
@@ -637,7 +715,9 @@ void SendCoinsDialog::processSendCoinsReturn(const WalletModel::SendCoinsReturn 
         msgParams.second = CClientUIInterface::MSG_ERROR;
         break;
     case WalletModel::TransactionCommitFailed:
-        msgParams.first = tr("The transaction was rejected! This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.");
+        msgParams.first = sendCoinsReturn.errorMessage.isEmpty()
+            ? tr("Transaction commit failed. Check the transaction status before retrying.")
+            : sendCoinsReturn.errorMessage;
         msgParams.second = CClientUIInterface::MSG_ERROR;
         break;
     case WalletModel::AbsurdFee:

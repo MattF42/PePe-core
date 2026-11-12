@@ -24,6 +24,13 @@
 #include <QDesktopWidget>
 #include <QPainter>
 
+namespace {
+static const int SPLASH_OUTER_INSET = 8;
+static const int SPLASH_TEXT_INSET = 25;
+static const int SPLASH_FOOTER_HEIGHT = 159;
+static const int SPLASH_MESSAGE_HEIGHT = 23;
+}
+
 SplashScreen::SplashScreen(Qt::WindowFlags f, const NetworkStyle *networkStyle) :
     QWidget(0, f), curAlignment(0)
 {
@@ -35,71 +42,72 @@ SplashScreen::SplashScreen(Qt::WindowFlags f, const NetworkStyle *networkStyle) 
     // no window decorations
     setWindowFlags(Qt::FramelessWindowHint);
 
-    // set reference point, paddings
-    int paddingLeft             = 25;
-    int paddingTop              = 440;
-    int titleVersionVSpace      = 40;
-    int titleCopyrightVSpace    = 50;
+    // Keep the artwork visible while giving all splash text a readable footer.
+    const QString titleText = tr("PEPEPOW Core");
+    const QString versionText = tr("Version %1").arg(QString::fromStdString(FormatFullVersion()));
+    const QString copyrightTextBtc = QChar(0xA9) + QString(" 2009-%1 ").arg(COPYRIGHT_YEAR) + tr("The Bitcoin Core developers");
+    const QString copyrightTextDash = QChar(0xA9) + QString(" 2014-%1 ").arg(COPYRIGHT_YEAR) + tr("The Dash Core developers");
+    const QString copyrightTextPEPEPOW = QChar(0xA9) + QString(" 2022-%1 ").arg(COPYRIGHT_YEAR) + tr("The PEPEPOW Core developers");
+    const QString titleAddText = networkStyle->getTitleAddText();
 
-    float fontFactor            = 1;
-
-    // define text to place
-    QString titleText       = tr("PEPEPOW Core");
-    QString versionText     = QString(tr("Version %1")).arg(QString::fromStdString(FormatFullVersion()));
-    QString copyrightTextBtc   = QChar(0xA9)+QString(" 2009-%1 ").arg(COPYRIGHT_YEAR) + QString(tr("The Bitcoin Core developers"));
-    QString copyrightTextDash   = QChar(0xA9)+QString(" 2014-%1 ").arg(COPYRIGHT_YEAR) + QString(tr("The Dash Core developers"));
-    QString copyrightTextPEPEPOW   = QChar(0xA9)+QString(" 2022-%1 ").arg(COPYRIGHT_YEAR) + QString(tr("The PEPEPOW Core developers"));
-    QString titleAddText    = networkStyle->getTitleAddText();
-    // networkstyle.cpp can't (yet) read themes, so we do it here to get the correct Splash-screen
+    // networkstyle.cpp cannot select a theme-aware splash image.
     QString splashScreenPath = ":/images/" + GUIUtil::getThemeName() + "/splash";
-    if(GetBoolArg("-regtest", false))
-        splashScreenPath = ":/images/" + GUIUtil::getThemeName() + "/splash_testnet";
-    if(GetBoolArg("-testnet", false))
+    if (GetBoolArg("-regtest", false) || GetBoolArg("-testnet", false))
         splashScreenPath = ":/images/" + GUIUtil::getThemeName() + "/splash_testnet";
 
-    QString font = QApplication::font().toString();
-
-    // load the bitmap for writing some text over it
     pixmap = QPixmap(splashScreenPath);
-
     QPainter pixPaint(&pixmap);
-    //pixPaint.setPen(QColor(100,100,100));
-    pixPaint.setPen(QColor(255,255,255)); // white color text
+    pixPaint.setRenderHint(QPainter::TextAntialiasing);
+    const int footerTop = pixmap.height() - SPLASH_FOOTER_HEIGHT;
+    const int textWidth = pixmap.width() - 2 * SPLASH_TEXT_INSET;
 
+    // A dark translucent footer improves contrast without replacing the artwork.
+    pixPaint.fillRect(QRect(SPLASH_OUTER_INSET, footerTop,
+                           pixmap.width() - 2 * SPLASH_OUTER_INSET,
+                           SPLASH_FOOTER_HEIGHT - SPLASH_OUTER_INSET),
+                      QColor(8, 15, 27, 208));
+    pixPaint.setPen(Qt::white);
 
-    // check font size and drawing with
-    pixPaint.setFont(QFont(font, 28*fontFactor));
-    QFontMetrics fm = pixPaint.fontMetrics();
-    int titleTextWidth  = fm.width(titleText);
-    if(titleTextWidth > 160) {
-        // strange font rendering, Arial probably not found
-        fontFactor = 0.75;
+    // Derive the font from QFont, not QFont::toString() (a serialized descriptor).
+    QFont footerFont = QApplication::font();
+    footerFont.setPixelSize(27);
+    footerFont.setBold(true);
+    pixPaint.setFont(footerFont);
+    QRect titleRect(SPLASH_TEXT_INSET, footerTop + 8, textWidth, 34);
+    if (!titleAddText.isEmpty())
+        titleRect.setWidth(textWidth * 2 / 3);
+    pixPaint.drawText(titleRect, Qt::AlignLeft | Qt::AlignVCenter | Qt::TextSingleLine,
+                      pixPaint.fontMetrics().elidedText(titleText, Qt::ElideRight, titleRect.width()));
+
+    if (!titleAddText.isEmpty()) {
+        footerFont.setPixelSize(12);
+        pixPaint.setFont(footerFont);
+        const QRect networkRect(SPLASH_TEXT_INSET + textWidth * 2 / 3, footerTop + 8,
+                                textWidth / 3, 34);
+        pixPaint.drawText(networkRect, Qt::AlignRight | Qt::AlignVCenter | Qt::TextSingleLine,
+                          pixPaint.fontMetrics().elidedText(titleAddText, Qt::ElideRight,
+                                                           networkRect.width()));
     }
 
-    pixPaint.setFont(QFont(font, 28*fontFactor));
-    fm = pixPaint.fontMetrics();
-    titleTextWidth  = fm.width(titleText);
-    pixPaint.drawText(paddingLeft,paddingTop,titleText);
+    footerFont.setBold(false);
+    footerFont.setPixelSize(16);
+    pixPaint.setFont(footerFont);
+    const QRect versionRect(SPLASH_TEXT_INSET, footerTop + 44, textWidth, 25);
+    pixPaint.drawText(versionRect, Qt::AlignLeft | Qt::AlignVCenter | Qt::TextSingleLine,
+                      pixPaint.fontMetrics().elidedText(versionText, Qt::ElideRight, textWidth));
 
-    pixPaint.setFont(QFont(font, 15*fontFactor));
-    pixPaint.drawText(paddingLeft,paddingTop+titleVersionVSpace,versionText);
-
-    // draw copyright stuff
-    pixPaint.setFont(QFont(font, 10*fontFactor));
-    pixPaint.drawText(paddingLeft,paddingTop+titleCopyrightVSpace+15,copyrightTextBtc);
-    pixPaint.drawText(paddingLeft,paddingTop+titleCopyrightVSpace+15,copyrightTextDash);
-    pixPaint.drawText(paddingLeft,paddingTop+titleCopyrightVSpace+35,copyrightTextPEPEPOW);
-
-    // draw additional text if special network
-    if(!titleAddText.isEmpty()) {
-        QFont boldFont = QFont(font, 10*fontFactor);
-        boldFont.setWeight(QFont::Bold);
-        pixPaint.setFont(boldFont);
-        fm = pixPaint.fontMetrics();
-        int titleAddTextWidth  = fm.width(titleAddText);
-        pixPaint.drawText(pixmap.width()-titleAddTextWidth-10,pixmap.height()-25,titleAddText);
+    footerFont.setPixelSize(12);
+    pixPaint.setFont(footerFont);
+    const QString copyrightLines[] = {
+        copyrightTextBtc, copyrightTextDash, copyrightTextPEPEPOW
+    };
+    for (int i = 0; i < 3; ++i) {
+        const QRect lineRect(SPLASH_TEXT_INSET, footerTop + 75 + i * 17,
+                             textWidth, 16);
+        pixPaint.drawText(lineRect, Qt::AlignLeft | Qt::AlignVCenter | Qt::TextSingleLine,
+                          pixPaint.fontMetrics().elidedText(copyrightLines[i],
+                                                           Qt::ElideRight, textWidth));
     }
-
     pixPaint.end();
 
     // Resize window and move to center of desktop, disallow resizing
@@ -205,14 +213,29 @@ void SplashScreen::showMessage(const QString &message, int alignment, const QCol
 
 void SplashScreen::paintEvent(QPaintEvent *event)
 {
+    Q_UNUSED(event);
     QPainter painter(this);
-    painter.setPen(QColor(255, 255, 255)); // White frame
-    painter.drawPixmap(0, 0, pixmap); //draw background picture
-    painter.setBrush(QBrush(QColor(70, 0, 110, 30)));  // RGBA dark purple, 30 transparent
-    QRect textBackgroundRect = rect().adjusted(7, 7, -7, -7);
-    painter.drawRect(textBackgroundRect);  // draw rect
-    painter.setPen(curColor); //font color
-    painter.drawText(textBackgroundRect, curAlignment, curMessage); // print text
+    painter.drawPixmap(0, 0, pixmap);
+
+    // The bottom row is reserved for changing initialization/progress text.
+    // It cannot paint over the three static copyright lines above it.
+    if (curMessage.isEmpty())
+        return;
+
+    const QRect messageRect(SPLASH_TEXT_INSET, height() - 32,
+                            width() - 2 * SPLASH_TEXT_INSET, SPLASH_MESSAGE_HEIGHT);
+    QFont messageFont = QApplication::font();
+    messageFont.setPixelSize(13);
+    painter.setFont(messageFont);
+    painter.setRenderHint(QPainter::TextAntialiasing);
+    painter.setPen(curColor.isValid() ? curColor : QColor(Qt::white));
+    const QString message = painter.fontMetrics().elidedText(curMessage,
+                                                             Qt::ElideRight,
+                                                             messageRect.width());
+    painter.drawText(messageRect,
+                     (curAlignment & Qt::AlignHorizontal_Mask) | Qt::AlignVCenter |
+                         Qt::TextSingleLine,
+                     message);
 }
 
 void SplashScreen::closeEvent(QCloseEvent *event)

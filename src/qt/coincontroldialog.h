@@ -6,6 +6,9 @@
 #define BITCOIN_QT_COINCONTROLDIALOG_H
 
 #include "amount.h"
+#include "primitives/transaction.h"
+#include "walletmodel.h"
+#include <vector>
 
 #include <QAbstractButton>
 #include <QAction>
@@ -14,6 +17,7 @@
 #include <QMenu>
 #include <QPoint>
 #include <QString>
+#include <QStringList>
 #include <QTreeWidgetItem>
 
 class PlatformStyle;
@@ -21,6 +25,8 @@ class WalletModel;
 
 class CCoinControl;
 class CTxMemPool;
+class QProgressDialog;
+class QTimer;
 
 namespace Ui {
     class CoinControlDialog;
@@ -40,10 +46,16 @@ public:
 
     // static because also called from sendcoinsdialog
     static void updateLabels(WalletModel*, QDialog*);
+    static int pruneInvalidSelections(WalletModel*);
+    // Stop accepting consolidation work and wait before wallet teardown.
+    static void stopConsolidationWorkers();
 
     static QList<CAmount> payAmounts;
     static CCoinControl *coinControl;
     static bool fSubtractFeeFromAmount;
+
+public:
+    void done(int result) override;
 
 private:
     Ui::CoinControlDialog *ui;
@@ -58,6 +70,31 @@ private:
     QAction *unlockAction;
 
     const PlatformStyle *platformStyle;
+
+    // Auto-consolidation state is owned by this modal dialog; only one job
+    // can execute at a time, and normal manual Coin Control remains separate.
+    bool consolidationRunning;
+    bool consolidationWaiting;
+    bool consolidationPaused;
+    bool consolidationHasCarry;
+    int consolidationInitial;
+    int consolidationProcessed;
+    int consolidationTxCount;
+    int consolidationPolls;
+    CAmount consolidationFees;
+    CAmount consolidationFeeBudget;
+    CAmount consolidationBatchFeeCap;
+    COutPoint consolidationCarry;
+    CTxDestination consolidationDestination;
+    std::vector<COutPoint> consolidationPending;
+    QStringList consolidationTxIds;
+    QTimer *consolidationTimer;
+    QTimer *coinListRefreshTimer;
+    QProgressDialog *consolidationProgress;
+    WalletModel::UnlockContext *consolidationUnlock;
+
+    void launchConsolidationBatch();
+    void finishConsolidation(const QString& details, bool complete);
 
     QString strPad(QString, int, QString);
     void sortView(int, Qt::SortOrder);
@@ -120,8 +157,14 @@ private Q_SLOTS:
     void headerSectionClicked(int);
     void buttonBoxClicked(QAbstractButton*);
     void buttonSelectAllClicked();
+    void buttonConsolidateClicked();
+    void consolidationBatchFinished(QString txid, QString error, qlonglong fee, int usedInputs);
+    void consolidationPollConfirmation();
+    void consolidationPause();
     void buttonToggleLockClicked();
     void updateLabelLocked();
+    void scheduleCoinListRefresh();
+    void refreshCoinList();
 };
 
 #endif // BITCOIN_QT_COINCONTROLDIALOG_H

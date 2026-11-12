@@ -2632,6 +2632,8 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
     // coin control -> return all selected outputs (we want all selected to go into the transaction for sure)
     if (coinControl && coinControl->HasSelected() && !coinControl->fAllowOtherInputs)
     {
+        std::vector<COutPoint> vRequested;
+        coinControl->ListSelected(vRequested);
         BOOST_FOREACH(const COutput& out, vCoins)
         {
             if(!out.fSpendable)
@@ -2647,7 +2649,8 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
             setCoinsRet.insert(make_pair(out.tx, out.i));
         }
 
-        return (nValueRet >= nTargetValue);
+        // A stale selected outpoint cannot silently disappear.
+        return (setCoinsRet.size() == vRequested.size() && nValueRet >= nTargetValue);
     }
 
     //if we're doing only denominated, we need to round up to the nearest smallest denomination
@@ -2681,6 +2684,16 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
         coinControl->ListSelected(vPresetInputs);
     BOOST_FOREACH(const COutPoint& outpoint, vPresetInputs)
     {
+        // A mapWallet record is not evidence of a currently spendable output.
+        bool fAvailable = false;
+        BOOST_FOREACH(const COutput& out, vCoins) {
+            if (out.tx->GetHash() == outpoint.hash && out.i == outpoint.n && out.fSpendable) {
+                fAvailable = true;
+                break;
+            }
+        }
+        if (!fAvailable)
+            return false;
         map<uint256, CWalletTx>::const_iterator it = mapWallet.find(outpoint.hash);
         if (it != mapWallet.end())
         {
@@ -3553,14 +3566,123 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
     return true;
 }
 
+
+void CWallet::AvailableConsolidationCoins(std::vector<COutput>& eligible) const
+{
+    std::vector<COutput> available;
+    AvailableCoins(available, true);
+    eligible.clear();
+
+    BOOST_FOREACH(const COutput& out, available) {
+        const CAmount value = out.tx->vout[out.i].nValue;
+        CTxDestination address;
+        // Be conservative about collateral, PrivateSend and unconfirmed change.
+        if (out.nDepth < 1 || !out.fSpendable ||
+            !ExtractDestination(out.tx->vout[out.i].scriptPubKey, address) ||
+            CPrivateSend::IsDenominatedAmount(value) ||
+            CPrivateSend::IsCollateralAmount(value) ||
+            value == 10000000 * COIN ||
+            value == 25000000 * COIN ||
+            value == 50000000 * COIN ||
+            value == 100000000 * COIN)
+            continue;
+        eligible.push_back(out);
+    }
+}
+
+bool CWallet::CreateConsolidationTransaction(const std::vector<COutPoint>& inputs,
+                                             const CTxDestination& dest,
+                                             CWalletTx& wtxNew, CReserveKey& reservekey,
+                                             CAmount& fee, std::string& reason,
+                                             CAmount feeCap, unsigned int sizeCap)
+{
+    if (inputs.size() < 2 || inputs.size() > 500 || sizeCap == 0 || sizeCap >= MAX_STANDARD_TX_SIZE) {
+        reason = "Invalid consolidation input count or size limit";
+        return false;
+    }
+
+    LOCK2(cs_main, cs_wallet);
+    const CScript destinationScript = GetScriptForDestination(dest);
+    if (IsMine(CTxOut(1, destinationScript)) != ISMINE_SPENDABLE) {
+        reason = "Consolidation destination is not spendable by this wallet";
+        return false;
+    }
+
+    std::vector<COutput> available;
+    AvailableConsolidationCoins(available);
+    std::map<COutPoint, CAmount> spendable;
+    BOOST_FOREACH(const COutput& out, available)
+        spendable[COutPoint(out.tx->GetHash(), out.i)] = out.tx->vout[out.i].nValue;
+
+    CCoinControl selection;
+    selection.fAllowOtherInputs = false;
+    selection.fUsePrivateSend = false;
+    selection.fUseInstantSend = false;
+    CAmount amount = 0;
+    std::set<COutPoint> exact;
+    BOOST_FOREACH(const COutPoint& input, inputs) {
+        if (!exact.insert(input).second || !spendable.count(input)) {
+            reason = "Duplicate, spent, locked or unconfirmed consolidation input";
+            return false;
+        }
+        const CAmount value = spendable[input];
+        if (value <= 0 || !MoneyRange(value) || amount > MAX_MONEY - value) {
+            reason = "Invalid consolidation input value";
+            return false;
+        }
+        amount += value;
+        selection.Select(input);
+    }
+
+    std::vector<CRecipient> recipients;
+    CRecipient recipient = {destinationScript, amount, true};
+    recipients.push_back(recipient);
+    int changePosition = -1;
+    if (!CreateTransaction(recipients, wtxNew, reservekey, fee, changePosition,
+                           reason, &selection, true, ALL_COINS, false))
+        return false;
+
+    if (fee < 0 || fee > feeCap ||
+        ::GetSerializeSize(static_cast<const CTransaction&>(wtxNew),
+                           SER_NETWORK, PROTOCOL_VERSION) > sizeCap ||
+        wtxNew.vout.size() != 1 || wtxNew.vout[0].scriptPubKey != destinationScript ||
+        wtxNew.vout[0].nValue != amount - fee ||
+        wtxNew.vin.size() != exact.size()) {
+        reason = "Consolidation fee, size or output policy exceeded";
+        return false;
+    }
+
+    std::set<COutPoint> actual;
+    BOOST_FOREACH(const CTxIn& in, wtxNew.vin)
+        actual.insert(in.prevout);
+    if (actual != exact) {
+        reason = "Consolidation transaction did not use exactly the specified inputs";
+        return false;
+    }
+
+    return true;
+}
+
 /**
  * Call after CreateTransaction unless you want to abort
  */
-bool CWallet::CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey, CConnman* connman, std::string strCommand)
+bool CWallet::CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey, CConnman* connman, std::string strCommand, std::string* strCommitError)
 {
+    if (strCommitError)
+        strCommitError->clear();
     {
         LOCK2(cs_main, cs_wallet);
         LogPrintf("CommitTransaction:\n%s", wtxNew.ToString());
+
+        // Validate mempool acceptance before recording wallet spends. Otherwise
+        // a rejected tx can falsely make unspent outputs disappear.
+        if (fBroadcastTransactions && !wtxNew.AcceptToMemoryPool(false))
+        {
+            LogPrintf("CommitTransaction(): rejected before recording wallet spend\n");
+            if (strCommitError)
+                *strCommitError = "Transaction rejected by mempool; wallet spend was not recorded.";
+            return false;
+        }
         {
             // This is only to keep the database open to defeat the auto-flush for the
             // duration of this scope.  This is the only place where this optimization
@@ -3572,7 +3694,26 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey, CCon
 
             // Add tx to wallet, because if it has change it's also ours,
             // otherwise just for transaction history.
-            AddToWallet(wtxNew, false, pwalletdb);
+            // Mempool admission is already complete; a disk failure cannot be
+            // treated as an ordinary rejection or silently reported as success.
+            if (!AddToWallet(wtxNew, false, pwalletdb))
+            {
+                const std::string error = strprintf(
+                    "Wallet database write failed after mempool acceptance; txid=%s. "
+                    "The wallet record is not safely persisted. Broadcast was not requested, "
+                    "but propagation cannot be ruled out. Do not retry until checking this "
+                    "transaction ID against the network.", wtxNew.GetHash().GetHex());
+                LogPrintf("ERROR: CommitTransaction(): %s\n", error);
+                if (strCommitError)
+                    *strCommitError = error;
+                if (fFileBacked)
+                    delete pwalletdb;
+                // AddToWallet already inserted the transaction into memory and
+                // updated spend maps, so keep that state until the outcome is
+                // reconciled. Never undo or retry an admitted transaction here.
+                MarkDirty();
+                return false; // Do not relay or claim success.
+            }
 
             // Notify that old coins are spent
             set<uint256> updated_hahes;
@@ -3595,13 +3736,7 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey, CCon
 
         if (fBroadcastTransactions)
         {
-            // Broadcast
-            if (!wtxNew.AcceptToMemoryPool(false))
-            {
-                // This must not fail. The transaction has already been signed and recorded.
-                LogPrintf("CommitTransaction(): Error: Transaction not valid\n");
-                return false;
-            }
+            // Already accepted into the mempool above.
             wtxNew.RelayWalletTransaction(connman, strCommand);
         }
     }

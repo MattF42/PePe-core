@@ -402,8 +402,9 @@ WalletModel::SendCoinsReturn WalletModel::sendCoins(WalletModelTransaction &tran
 
         CReserveKey *keyChange = transaction.getPossibleKeyChange();
 
-        if(!wallet->CommitTransaction(*newTx, *keyChange, g_connman.get(), recipients[0].fUseInstantSend ? NetMsgType::TXLOCKREQUEST : NetMsgType::TX))
-            return TransactionCommitFailed;
+        std::string commitError;
+        if(!wallet->CommitTransaction(*newTx, *keyChange, g_connman.get(), recipients[0].fUseInstantSend ? NetMsgType::TXLOCKREQUEST : NetMsgType::TX, &commitError))
+            return SendCoinsReturn(TransactionCommitFailed, QString::fromStdString(commitError));
 
         CTransaction* t = (CTransaction*)newTx;
         CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION);
@@ -643,8 +644,15 @@ WalletModel::UnlockContext::~UnlockContext()
 
 void WalletModel::UnlockContext::CopyFrom(const UnlockContext& rhs)
 {
-    // Transfer context; old object no longer relocks wallet
-    *this = rhs;
+    // Copy members directly: operator= calls CopyFrom, so *this = rhs
+    // would recurse indefinitely and overflow the stack.
+    if (this == &rhs)
+        return;
+    wallet = rhs.wallet;
+    valid = rhs.valid;
+    was_locked = rhs.was_locked;
+    was_mixing = rhs.was_mixing;
+    // Transfer ownership of the relock obligation to this context.
     rhs.was_locked = false;
     rhs.was_mixing = false;
 }
@@ -666,6 +674,7 @@ void WalletModel::getOutputs(const std::vector<COutPoint>& vOutpoints, std::vect
     BOOST_FOREACH(const COutPoint& outpoint, vOutpoints)
     {
         if (!wallet->mapWallet.count(outpoint.hash)) continue;
+        if (outpoint.n >= wallet->mapWallet[outpoint.hash].vout.size()) continue;
         int nDepth = wallet->mapWallet[outpoint.hash].GetDepthInMainChain();
         if (nDepth < 0) continue;
         COutput out(&wallet->mapWallet[outpoint.hash], outpoint.n, nDepth, true, true);

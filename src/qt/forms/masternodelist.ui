@@ -134,6 +134,11 @@
              </column>
              <column>
               <property name="text">
+               <string>Tier</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
                <string>Payee</string>
               </property>
              </column>
@@ -257,6 +262,11 @@
            </column>
            <column>
             <property name="text">
+             <string>Tier</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
              <string>Payee</string>
             </property>
            </column>
@@ -278,6 +288,16 @@
             <widget class="QLineEdit" name="filterLineEdit">
              <property name="toolTip">
               <string>Filter masternode list</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="refreshAllButton">
+             <property name="toolTip">
+              <string>Refresh from the local masternode list; does not download new masternode data.</string>
+             </property>
+             <property name="text">
+              <string>Refresh</string>
              </property>
             </widget>
            </item>
