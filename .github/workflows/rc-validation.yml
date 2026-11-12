@@ -1,0 +1,74 @@
+name: v2.9.0.6 Optional RC source and candidate verification
+on:
+  push:
+    branches: [release/v2.9.0.6-optional-upstream-review]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-sanity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check release candidate source invariants (not C++ runtime)
+        run: |
+          set -euo pipefail
+          python3 -m py_compile qa/rc-wallet-a/instrument.py qa/rc-wallet-a/wallet_persistence.py
+          python3 - <<'PY'
+          from pathlib import Path
+          cpp=Path('src/wallet/wallet.cpp').read_text()
+          commit=cpp.split('bool CWallet::CommitTransaction(',1)[1].split('bool CWallet::AddAccountingEntry(',1)[0]
+          assert 'if (!AddToWallet(wtxNew, false, pwalletdb))' in commit
+          assert 'txid=%s' in commit and 'Do not retry' in commit
+          assert commit.index('wtxNew.AcceptToMemoryPool(false)') < commit.index('if (!AddToWallet(wtxNew, false, pwalletdb))') < commit.index('wtxNew.RelayWalletTransaction(')
+          assert 'strCommitError' in Path('src/wallet/wallet.h').read_text()
+          assert '&commitError' in Path('src/qt/walletmodel.cpp').read_text()
+          assert 'ConsolidationPoolState' in Path('src/qt/coincontroldialog.cpp').read_text()
+          assert 'stopConsolidationWorkers()' in Path('src/qt/dash.cpp').read_text()
+          assert 'discarding orphan recovery replies' in Path('src/masternodeman.cpp').read_text()
+          assert 'edge-test-fail-wallet-write' not in cpp
+          config=Path('configure.ac').read_text()
+          for key,n in [('MAJOR',2),('MINOR',9),('REVISION',0),('BUILD',6)]:
+              assert f'define(_CLIENT_VERSION_{key}, {n})' in config
+          assert 'define(_CLIENT_VERSION_IS_RELEASE, false)' in config
+          print('PASS: A+B+C source invariants and candidate version; not a hosted binary build')
+          PY
+  rc2-candidate-archive-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: artifacts/v2.9.0.6-test-0d7d60d
+          path: candidates
+          persist-credentials: false
+          sparse-checkout: |
+            downloads/v2.9.0.6-test-0d7d60d
+      - name: Verify previously owner-tested exact RC2 archives
+        run: |
+          set -euo pipefail
+          cd candidates/downloads/v2.9.0.6-test-0d7d60d
+          sha256sum -c SHA256SUMS
+          test "$(wc -l < SHA256SUMS)" -eq 3
+          grep -q '0d7d60df283a5685bbf033c92b3fc0d94aff9aac' BUILD-REPORT.md
+          mkdir -p "$RUNNER_TEMP/arm" "$RUNNER_TEMP/x64" "$RUNNER_TEMP/win"
+          tar -xzf PEPEPOW-v2.9.0.6-0d7d60d-test-aarch64-linux-gnu.tgz -C "$RUNNER_TEMP/arm"
+          tar -xzf PEPEPOW-v2.9.0.6-0d7d60d-test-x86_64-linux-gnu.tgz -C "$RUNNER_TEMP/x64"
+          unzip -q PEPEPOW-v2.9.0.6-0d7d60d-test-x86_64-w64-mingw32.zip -d "$RUNNER_TEMP/win"
+          for exe in PEPEPOW_qt PEPEPOWd PEPEPOW-cli PEPEPOW-tx; do
+            test -f "$RUNNER_TEMP/arm/$exe"
+            test -f "$RUNNER_TEMP/win/$exe.exe"
+          done
+          test -f "$RUNNER_TEMP/x64/PEPEPOW_qt"
+          for exe in PEPEPOWd PEPEPOW-cli PEPEPOW-tx; do test -f "$RUNNER_TEMP/x64/bin/$exe"; done
+          file "$RUNNER_TEMP/arm/PEPEPOWd" | grep -q 'aarch64'
+          file "$RUNNER_TEMP/x64/bin/PEPEPOWd" | grep -q 'x86-64'
+          file "$RUNNER_TEMP/win/PEPEPOW_qt.exe" | grep -q 'PE32+'
+          if find "$RUNNER_TEMP/arm" "$RUNNER_TEMP/x64" "$RUNNER_TEMP/win" -type f \( -iname 'wallet.dat' -o -iname '*.log' -o -iname '*.key' \) -print -quit | grep -q .; then
+            echo 'Unexpected wallet, log or key in package' >&2
+            exit 1
+          fi
+          echo 'PASS: exact 0d7d60d candidate integrity and architecture; NOT fresh CI compilation'
