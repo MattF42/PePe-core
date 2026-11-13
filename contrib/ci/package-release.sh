@@ -16,7 +16,7 @@ test "$(git rev-parse HEAD)" = "$sha"
    "${GITHUB_REF:-}" == refs/heads/master ]] ||
   { echo "Release packaging requires a manual run on official master" >&2; exit 1; }
 config=$(git show "$sha:configure.ac")
-printf '%s\n' "$config" | grep -Fxq 'define(_CLIENT_VERSION_IS_RELEASE, true)' ||
+grep -Fxq 'define(_CLIENT_VERSION_IS_RELEASE, true)' <<< "$config" ||
   { echo "Release flag is not enabled in the exact source commit" >&2; exit 1; }
 version_parts=()
 for field in MAJOR MINOR REVISION BUILD; do
