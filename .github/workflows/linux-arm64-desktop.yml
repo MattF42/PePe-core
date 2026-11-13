@@ -39,12 +39,12 @@ jobs:
           docker run --rm --user "$(id -u):$(id -g)" -e "PEPE_SOURCE_SHA=$(git rev-parse HEAD)" \
             -v "$RUNNER_TEMP/source:/source:ro" -v "$RUNNER_TEMP/output:/output" \
             pepe-arm64-desktop /source/contrib/linux-arm64-desktop/build.sh
-          contrib/ci/package-candidate.sh "$RUNNER_TEMP/output" "$(git rev-parse HEAD)" aarch64-linux-gnu "$GITHUB_WORKSPACE"
+          contrib/ci/package-selected.sh "$RUNNER_TEMP/output" "$(git rev-parse HEAD)" aarch64-linux-gnu "$GITHUB_WORKSPACE"
       - uses: actions/upload-artifact@v4
         with:
           name: pepe-linux-arm64-desktop
           path: |
-            PEPEPOW-v*-test-aarch64-linux-gnu.tgz
+            PEPEPOW-v*.tgz
             SHA256SUMS.txt
           if-no-files-found: error
   compatibility:
@@ -68,7 +68,7 @@ jobs:
           test "$(uname -m)" = aarch64
           sha256sum -c SHA256SUMS.txt
           mkdir -p "$RUNNER_TEMP/artifact" "$RUNNER_TEMP/test-image"
-          tar -xzf PEPEPOW-v*-test-aarch64-linux-gnu.tgz -C "$RUNNER_TEMP/artifact"
+          tar -xzf PEPEPOW-v*.tgz -C "$RUNNER_TEMP/artifact"
           printf 'FROM ubuntu:%s\nRUN apt-get update && apt-get install -y --no-install-recommends binutils libgl1 fontconfig fonts-dejavu-core xvfb xauth && rm -rf /var/lib/apt/lists/*\n' "$UBUNTU_VERSION" > "$RUNNER_TEMP/test-image/Dockerfile"
           docker build -t pepe-arm64-compat "$RUNNER_TEMP/test-image"
           docker run --rm --network=none -v "$RUNNER_TEMP/artifact:/artifact:ro" \

@@ -39,11 +39,11 @@ jobs:
             -e PEPE_DEPENDS_CACHE=/depends-cache -v "$RUNNER_TEMP/pepe-depends-cache:/depends-cache" \
             -v "$RUNNER_TEMP/source:/source:ro" -v "$RUNNER_TEMP/output:/output" \
             pepe-win64-builder /source/contrib/windows-portable/build.sh
-          contrib/ci/package-candidate.sh "$RUNNER_TEMP/output" "$(git rev-parse HEAD)" x86_64-w64-mingw32 "$GITHUB_WORKSPACE"
+          contrib/ci/package-selected.sh "$RUNNER_TEMP/output" "$(git rev-parse HEAD)" x86_64-w64-mingw32 "$GITHUB_WORKSPACE"
       - uses: actions/upload-artifact@v4
         with:
           name: pepe-windows-x86_64-candidate
           path: |
-            PEPEPOW-v*-test-x86_64-w64-mingw32.zip
+            PEPEPOW-v*.zip
             SHA256SUMS.txt
           if-no-files-found: error
